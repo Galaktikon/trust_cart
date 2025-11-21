@@ -1,18 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
-<meta charset="UTF-8">
-<title>Page Title</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="">
-<style>
-</style>
-<script src=""></script>
+<html>
+<head>
+    <title>Supabase + Render Starter</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="script.js"></script>
+</head>
 <body>
+    <h1>Supabase + Render Starter</h1>
 
-    <div class="">
-        <h1>This is a Heading</h1>
-        <p>This is a paragraph.</p>
-        <p>This is second paragraph.</p>
+    <div id="auth-section">
+        <h2>Login</h2>
+        <input id="email" type="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Password">
+        <button id="login-btn">Login / Sign Up</button>
+    </div>
+
+    <div id="user-info" style="display:none;">
+        <h2>User Info</h2>
+        <p id="user-email"></p>
+        <button id="logout-btn">Logout</button>
+
+        <h3>Backend Test</h3>
+        <button id="backend-btn">Call Backend</button>
+        <pre id="backend-response"></pre>
     </div>
 
 </body>
