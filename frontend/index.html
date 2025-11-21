@@ -3,49 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrustCart – Home</title>
+  <title>TrustCart – Secure Shopping</title>
+
+  <!-- Google Font (nice modern look) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Main stylesheet (same folder as this file) -->
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Plaid Link script (required for bank connection) -->
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 </head>
 <body>
-  <!-- Navbar -->
+  <!-- ===================== NAVBAR ===================== -->
   <header class="navbar">
     <div class="navbar-left">
       <span class="logo">TrustCart</span>
     </div>
     <nav class="navbar-right">
-      <a href="index.html" class="nav-link active">Home</a>
-      <a href="#" class="nav-link">Products</a>
-      <a href="cart.html" class="nav-link">Cart</a>
+      <a href="#top" class="nav-link active">Home</a>
+      <a href="#products" class="nav-link">Products</a>
+      <a href="#bank" class="nav-link">Bank</a>
+      <!-- Logout uses function from script.js -->
+      <button
+        type="button"
+        class="nav-link"
+        style="background:none;border:none;cursor:pointer;"
+        onclick="trustcartLogout()"
+      >
+        Logout
+      </button>
     </nav>
   </header>
 
-  <!-- Main Layout: Hero + Auth Panel -->
+  <!-- Anchor for "Home" link -->
+  <div id="top"></div>
+
+  <!-- ===================== MAIN LAYOUT ===================== -->
   <main class="home-main">
-    <!-- Left: Hero / Info -->
+    <!-- ---------- LEFT: HERO / INFO ---------- -->
     <section class="hero">
       <div class="hero-content">
         <h1>Shop smarter with TrustCart.</h1>
         <p>
-          Secure payments, trusted sellers, and a smooth checkout experience—built
-          for buyers who care about safety and speed.
+          A secure, modern e-commerce experience with integrated banking. 
+          Manage your shopping, spending, and accounts all in one place.
         </p>
+
         <div class="hero-actions">
           <a href="#products" class="primary-btn">Browse Featured Deals</a>
           <a href="#auth-panel" class="secondary-btn">Login / Sign Up</a>
         </div>
+
         <p class="hero-tagline">
-          Encrypted checkout • Buyer protection • Fast delivery
+          Encrypted checkout • Buyer protection • Bank account integration
         </p>
       </div>
     </section>
 
-    <!-- Right: Login / Sign Up -->
+    <!-- ---------- RIGHT: AUTH PANEL (LOGIN + SIGN UP) ---------- -->
     <aside class="home-auth-panel" id="auth-panel">
       <div class="auth-card">
         <h2 class="auth-title">Welcome to TrustCart</h2>
-        <p class="auth-subtitle">Login or create a new account to start shopping.</p>
+        <p class="auth-subtitle">
+          Login or create a new account to start shopping and connect your bank.
+        </p>
 
-        <!-- Login Form -->
+        <!-- LOGIN FORM -->
         <form id="loginForm">
           <label class="auth-label">
             Email
@@ -77,7 +106,7 @@
           <a href="#" id="showRegister" class="auth-link">Create an account</a>
         </p>
 
-        <!-- Simple inline Register "section" that toggles -->
+        <!-- SIGN UP FORM (HIDDEN BY DEFAULT, JS TOGGLES IT) -->
         <form id="registerForm" class="hidden">
           <label class="auth-label">
             Full Name
@@ -120,10 +149,24 @@
     </aside>
   </main>
 
-  <!-- Featured Products -->
+  <!-- ===================== BANK SECTION (PLAID) ===================== -->
+  <section class="products-section" id="bank">
+    <h2>Connect Your Bank</h2>
+    <p style="max-width: 520px; color: #9ca3af; font-size: 14px;">
+      Link your bank account securely using Plaid to view balances, track
+      spending, and build a smarter checkout experience inside TrustCart.
+    </p>
+
+    <button id="link-bank-btn" class="primary-btn" style="margin-top: 12px;">
+      Connect your bank
+    </button>
+  </section>
+
+  <!-- ===================== PRODUCTS SECTION ===================== -->
   <section class="products-section" id="products">
     <h2>Featured Products</h2>
     <div class="product-grid">
+      <!-- Product 1 -->
       <div class="product-card">
         <div class="product-image"></div>
         <h3>Wireless Earbuds Pro</h3>
@@ -131,6 +174,7 @@
         <button class="product-button">Add to Cart</button>
       </div>
 
+      <!-- Product 2 -->
       <div class="product-card">
         <div class="product-image"></div>
         <h3>Smart Watch Series X</h3>
@@ -138,6 +182,7 @@
         <button class="product-button">Add to Cart</button>
       </div>
 
+      <!-- Product 3 -->
       <div class="product-card">
         <div class="product-image"></div>
         <h3>Portable Bluetooth Speaker</h3>
@@ -147,11 +192,12 @@
     </div>
   </section>
 
-  <!-- Footer -->
+  <!-- ===================== FOOTER ===================== -->
   <footer class="footer">
-    © 2025 TrustCart · Secure E-Commerce
+    © 2025 TrustCart · Secure E-Commerce & Banking Integration
   </footer>
 
- <script src="script.js"></script>
+  <!-- Load your main JS (handles auth, Plaid, etc.) -->
+  <script src="script.js"></script>
 </body>
 </html>
