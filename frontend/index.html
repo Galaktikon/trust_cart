@@ -152,38 +152,6 @@
     © 2025 TrustCart · Secure E-Commerce
   </footer>
 
-  <script>
-    // Toggle between login and register in the right panel
-    const loginForm = document.getElementById("loginForm");
-    const registerForm = document.getElementById("registerForm");
-    const showRegister = document.getElementById("showRegister");
-    const showLogin = document.getElementById("showLogin");
-
-    showRegister.addEventListener("click", (e) => {
-      e.preventDefault();
-      loginForm.classList.add("hidden");
-      registerForm.classList.remove("hidden");
-    });
-
-    showLogin.addEventListener("click", (e) => {
-      e.preventDefault();
-      registerForm.classList.add("hidden");
-      loginForm.classList.remove("hidden");
-    });
-
-    // Fake login handler (no backend yet)
-    loginForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      alert("Logged in (placeholder)!");
-      // Example: window.location.href = "dashboard.html";
-    });
-
-    // Fake register handler (no backend yet)
-    registerForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      alert("Account created (placeholder)!");
-      // Example: send data to backend here
-    });
-  </script>
+ <script src="script.js"></script>
 </body>
 </html>
