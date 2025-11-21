@@ -3,43 +3,186 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrustCart – Login</title>
+  <title>TrustCart – Home</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body class="auth-body">
-  <div class="auth-container">
-    <div class="auth-card">
-      <h1 class="logo">TrustCart</h1>
-      <p class="auth-subtitle">Sign in to your secure account</p>
-
-      <form id="loginForm">
-        <label class="auth-label">
-          Email
-          <input type="email" id="loginEmail" class="auth-input" placeholder="you@example.com" required />
-        </label>
-
-        <label class="auth-label">
-          Password
-          <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required />
-        </label>
-
-        <button type="submit" class="auth-button">Login</button>
-      </form>
-
-      <p class="auth-footer">
-        Don’t have an account?
-        <a href="register.html" class="auth-link">Create one</a>
-      </p>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <span class="logo">TrustCart</span>
     </div>
-  </div>
+    <nav class="navbar-right">
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="#" class="nav-link">Products</a>
+      <a href="cart.html" class="nav-link">Cart</a>
+    </nav>
+  </header>
+
+  <!-- Main Layout: Hero + Auth Panel -->
+  <main class="home-main">
+    <!-- Left: Hero / Info -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Shop smarter with TrustCart.</h1>
+        <p>
+          Secure payments, trusted sellers, and a smooth checkout experience—built
+          for buyers who care about safety and speed.
+        </p>
+        <div class="hero-actions">
+          <a href="#products" class="primary-btn">Browse Featured Deals</a>
+          <a href="#auth-panel" class="secondary-btn">Login / Sign Up</a>
+        </div>
+        <p class="hero-tagline">
+          Encrypted checkout • Buyer protection • Fast delivery
+        </p>
+      </div>
+    </section>
+
+    <!-- Right: Login / Sign Up -->
+    <aside class="home-auth-panel" id="auth-panel">
+      <div class="auth-card">
+        <h2 class="auth-title">Welcome to TrustCart</h2>
+        <p class="auth-subtitle">Login or create a new account to start shopping.</p>
+
+        <!-- Login Form -->
+        <form id="loginForm">
+          <label class="auth-label">
+            Email
+            <input
+              type="email"
+              id="loginEmail"
+              class="auth-input"
+              placeholder="you@example.com"
+              required
+            />
+          </label>
+
+          <label class="auth-label">
+            Password
+            <input
+              type="password"
+              id="loginPassword"
+              class="auth-input"
+              placeholder="••••••••"
+              required
+            />
+          </label>
+
+          <button type="submit" class="auth-button">Login</button>
+        </form>
+
+        <p class="auth-footer">
+          New here?
+          <a href="#" id="showRegister" class="auth-link">Create an account</a>
+        </p>
+
+        <!-- Simple inline Register "section" that toggles -->
+        <form id="registerForm" class="hidden">
+          <label class="auth-label">
+            Full Name
+            <input
+              type="text"
+              id="regName"
+              class="auth-input"
+              placeholder="John Doe"
+            />
+          </label>
+
+          <label class="auth-label">
+            Email
+            <input
+              type="email"
+              id="regEmail"
+              class="auth-input"
+              placeholder="you@example.com"
+            />
+          </label>
+
+          <label class="auth-label">
+            Password
+            <input
+              type="password"
+              id="regPassword"
+              class="auth-input"
+              placeholder="Create a password"
+            />
+          </label>
+
+          <button type="submit" class="auth-button alt">Sign Up</button>
+
+          <p class="auth-footer">
+            Already have an account?
+            <a href="#" id="showLogin" class="auth-link">Back to login</a>
+          </p>
+        </form>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Featured Products -->
+  <section class="products-section" id="products">
+    <h2>Featured Products</h2>
+    <div class="product-grid">
+      <div class="product-card">
+        <div class="product-image"></div>
+        <h3>Wireless Earbuds Pro</h3>
+        <p class="product-price">$89.99</p>
+        <button class="product-button">Add to Cart</button>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image"></div>
+        <h3>Smart Watch Series X</h3>
+        <p class="product-price">$149.99</p>
+        <button class="product-button">Add to Cart</button>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image"></div>
+        <h3>Portable Bluetooth Speaker</h3>
+        <p class="product-price">$49.99</p>
+        <button class="product-button">Add to Cart</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    © 2025 TrustCart · Secure E-Commerce
+  </footer>
 
   <script>
-    // Simple client-side "login" redirect
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    // Toggle between login and register in the right panel
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const showRegister = document.getElementById("showRegister");
+    const showLogin = document.getElementById("showLogin");
+
+    showRegister.addEventListener("click", (e) => {
       e.preventDefault();
-      // Here is where you’d normally send a request to your backend.
-      // For now we just redirect to the homepage:
-      window.location.href = 'home.html';
+      loginForm.classList.add("hidden");
+      registerForm.classList.remove("hidden");
+    });
+
+    showLogin.addEventListener("click", (e) => {
+      e.preventDefault();
+      registerForm.classList.add("hidden");
+      loginForm.classList.remove("hidden");
+    });
+
+    // Fake login handler (no backend yet)
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      alert("Logged in (placeholder)!");
+      // Example: window.location.href = "dashboard.html";
+    });
+
+    // Fake register handler (no backend yet)
+    registerForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      alert("Account created (placeholder)!");
+      // Example: send data to backend here
     });
   </script>
 </body>
