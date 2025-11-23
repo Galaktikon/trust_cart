@@ -10,7 +10,7 @@ const API_BASE_URL = 'https://trust-cart-backend.onrender.com';
 //Supabase Configuration
 const SUPABASE_URL = "https://semkimaoxlmxtyhlhada.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlbWtpbWFveGxteHR5aGxoYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMjMyNzIsImV4cCI6MjA3ODg5OTI3Mn0.RaOsVMI2UQULkWCYgJGntpNpndaqM1HIi4XHOkJb9kY";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /************************************************************
  * Rest of the script
@@ -139,12 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (error) {
         // Auto-signup fallback
         alert(error.message);
-        /*const { data: signupData, error: signupErr } = await supabase.auth.signUp({ email, password });
+        /*const { data: signupData, error: signupErr } = await supabaseClient.auth.signUp({ email, password });
         if (signupErr) return alert(signupErr.message);
         alert("Signed up! Verify your email.");*/
         return;
