@@ -20,7 +20,7 @@ body {
   --text-muted: #9ca3af;
 }
 
-/* Remove underlines by default */
+/* Links */
 a {
   text-decoration: none;
   color: inherit;
@@ -110,7 +110,7 @@ a {
 .hero p {
   font-size: 15px;
   color: var(--text-muted);
-  max-width: 480px;
+  max-width: 520px;
 }
 
 .hero-actions {
@@ -266,19 +266,23 @@ a {
   text-decoration: underline;
 }
 
-/* ============ SECTIONS (Products, Cart, Bank) ============ */
-.products-section {
+/* ============ GENERIC SECTIONS ============ */
+.products-section,
+.dashboard-section {
   padding: 10px 7% 40px;
 }
 
-.products-section h2 {
+.products-section h2,
+.dashboard-section h2 {
   font-size: 22px;
   margin-bottom: 10px;
 }
 
-/* reuse muted text within sections if needed */
-.products-section p {
+.section-subtitle {
   font-size: 14px;
+  color: var(--text-muted);
+  max-width: 640px;
+  margin-bottom: 16px;
 }
 
 /* ============ PRODUCTS GRID ============ */
@@ -300,11 +304,7 @@ a {
   width: 100%;
   height: 150px;
   border-radius: 14px;
-  background: radial-gradient(
-    circle at top,
-    rgba(250, 204, 21, 0.2),
-    #020617
-  );
+  object-fit: cover;
   margin-bottom: 10px;
 }
 
@@ -348,7 +348,6 @@ a {
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
 }
 
-/* When you render real cart items later, you can style them like this: */
 #cart .cart-item {
   display: flex;
   justify-content: space-between;
@@ -368,16 +367,148 @@ a {
   color: var(--gold-soft);
 }
 
-/* ============ BANK / PAYMENT SECTION ============ */
+/* ============ DASHBOARD / ANALYTICS ============ */
+.stats-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin: 16px 0 24px;
+}
+
+.stat-card {
+  background: radial-gradient(circle at top, #020617, #020617);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  display: block;
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.stat-note {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.storefront-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.storefront-card {
+  background: radial-gradient(circle at top, #020617, #020617);
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.8);
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.storefront-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(250, 204, 21, 0.1);
+  color: var(--gold-soft);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+}
+
+/* merchant products list in dashboard */
+.merchant-products-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.merchant-products-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.merchant-products-list li:last-child {
+  border-bottom: none;
+}
+
+.merchant-products-list .muted {
+  color: var(--text-muted);
+}
+
+/* ============ BANK / PAYOUT SECTION ============ */
 #bank {
-  /* visually matches products/cart sections */
+  /* Styling consistent with products-section via shared class */
 }
 
 #link-bank-btn {
   margin-top: 12px;
-  /* it already has .primary-btn class from HTML; this is optional extra tuning */
   padding-left: 22px;
   padding-right: 22px;
+}
+
+/* ============ REVIEWS ============ */
+.reviews-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.review-card {
+  background: radial-gradient(circle at top, #020617, #020617);
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+  font-size: 13px;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.review-author {
+  font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 12px;
+  color: var(--gold-soft);
+}
+
+.review-rating {
+  font-size: 13px;
+  color: #facc15;
+}
+
+.review-text {
+  margin: 6px 0;
+  color: #e5e7eb;
+}
+
+.review-meta {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* ============ FOOTER ============ */
