@@ -1,8 +1,8 @@
 /************************************************************
- * TrustCart - Frontend Logic (Auth + Plaid Link)
+ * TrustCart - Frontend Logic (Auth + Products + Plaid Link)
  ************************************************************/
 
-// API Configuration (your backend with Plaid endpoints)
+// Backend for Plaid endpoints, etc.
 const API_BASE_URL = "https://trust-cart-backend.onrender.com";
 
 // Supabase Configuration
@@ -39,6 +39,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const bankSection = document.getElementById("bank");
   const linkButton = document.getElementById("link-bank-btn");
+
+  const merchantProductsList = document.getElementById("merchantProducts");
+  const statTotalProducts = document.getElementById("statTotalProducts");
+  const statTotalValue = document.getElementById("statTotalValue");
+  const statTotalOrders = document.getElementById("statTotalOrders");
+
+  const uploadForm = document.getElementById("uploadItemForm");
+  const itemTitle = document.getElementById("itemTitle");
+  const itemPrice = document.getElementById("itemPrice");
+  const itemDescription = document.getElementById("itemDescription");
+  const itemImage = document.getElementById("itemImage");
 
   /* ---------- Helpers ---------- */
 
@@ -83,16 +94,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     return pass.length >= 6;
   }
 
-  // Called whenever auth succeeds (login OR user already logged in)
+  // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
 
     const displayName =
-      user.user_metadata?.full_name || user.email || "User";
+      user.user_metadata?.full_name || user.email || "Merchant";
 
     showToast(`Welcome, ${displayName}`, "success");
 
-    // Show the "Connect Bank/Card" section
+    // Show the bank / payouts section (Plaid integration)
     if (bankSection) {
       bankSection.classList.remove("hidden");
     }
@@ -101,12 +112,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (linkButton && !plaidInitialized) {
       await initPlaidLink();
     }
+
+    // Load merchant's products + analytics
+    await loadUserProducts(user);
   }
 
   async function logoutUser() {
     await supabaseClient.auth.signOut();
     showToast("Logged out", "success");
-    // Simple refresh to clear UI state
     setTimeout(() => window.location.reload(), 500);
   }
 
@@ -116,6 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* =======================================================
    *  CHECK IF USER ALREADY LOGGED IN (ON PAGE LOAD)
    * ======================================================= */
+
   try {
     const { data } = await supabaseClient.auth.getUser();
     if (data?.user) {
@@ -128,6 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* =======================================================
    *  TOGGLE LOGIN / REGISTER FORMS
    * ======================================================= */
+
   if (showRegister && showLogin && loginForm && registerForm) {
     showRegister.addEventListener("click", (e) => {
       e.preventDefault();
@@ -145,6 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* =======================================================
    *  LOGIN HANDLER
    * ======================================================= */
+
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -173,13 +189,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Logged in!", "success");
 
-      // data.session.user is available here
       if (data?.user) {
         await onAuthSuccess(data.user);
       } else if (data?.session?.user) {
         await onAuthSuccess(data.session.user);
       } else {
-        // fallback: re-fetch user
         const { data: userData } = await supabaseClient.auth.getUser();
         await onAuthSuccess(userData?.user);
       }
@@ -187,8 +201,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =======================================================
-   *  REGISTER HANDLER
+   *  REGISTER HANDLER (Sign up → then connect bank)
    * ======================================================= */
+
   if (registerForm) {
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -229,6 +244,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Account created! Check your email to verify.", "success");
 
+      // If Supabase auto-logs in (depends on your auth settings), call onAuthSuccess
+      if (signupData?.session?.user) {
+        await onAuthSuccess(signupData.session.user);
+      }
+
       registerForm.reset();
       registerForm.classList.add("hidden");
       if (loginForm) loginForm.classList.remove("hidden");
@@ -236,18 +256,163 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =======================================================
-   *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (no DB yet)
+   *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (prototype)
    * ======================================================= */
+
   const productButtons = document.querySelectorAll(".product-button");
   productButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      showToast("Added to cart", "success");
-      // Later: update DOM or Supabase with real cart logic
+      showToast("Added to cart (demo)", "success");
+      // Later: update real cart state in Supabase or localStorage
     });
   });
 
   /* =======================================================
-   * PLAID LINK SECTION (Frontend Part)
+   *  USER PRODUCT UPLOAD (Image + Row in "products" table)
+   * ======================================================= */
+
+  if (uploadForm) {
+    uploadForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // 1. Ensure user is logged in
+      const { data: userData, error: userErr } =
+        await supabaseClient.auth.getUser();
+      const user = userData?.user;
+
+      if (userErr || !user) {
+        showToast("You must be logged in to upload items", "error");
+        return;
+      }
+
+      // 2. Get form values
+      const title = (itemTitle?.value || "").trim();
+      const price = parseFloat(itemPrice?.value || "0");
+      const description = (itemDescription?.value || "").trim();
+      const file = itemImage?.files?.[0];
+
+      if (!title || !file || isNaN(price) || price < 0) {
+        showToast("Please fill out all required fields correctly", "error");
+        return;
+      }
+
+      try {
+        // 3. Upload image to Supabase Storage
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const filePath = fileName;
+
+        const { error: uploadError } = await supabaseClient.storage
+          .from("product-images")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error(uploadError);
+          showToast("Image upload failed", "error");
+          return;
+        }
+
+        // 4. Get public URL for the uploaded image
+        const { data: publicData } = supabaseClient.storage
+          .from("product-images")
+          .getPublicUrl(filePath);
+
+        const imageUrl = publicData?.publicUrl;
+        if (!imageUrl) {
+          showToast("Could not get image URL", "error");
+          return;
+        }
+
+        // 5. Insert product row into "products" table
+        const { error: insertError } = await supabaseClient
+          .from("products")
+          .insert({
+            title,
+            description,
+            price,
+            image_url: imageUrl,
+            owner_id: user.id,
+          });
+
+        if (insertError) {
+          console.error(insertError);
+          showToast("Error saving product", "error");
+          return;
+        }
+
+        showToast("Item uploaded successfully!", "success");
+        uploadForm.reset();
+
+        // Reload merchant products + stats
+        await loadUserProducts(user);
+      } catch (err) {
+        console.error(err);
+        showToast("Unexpected error uploading item", "error");
+      }
+    });
+  }
+
+  /* =======================================================
+   *  LOAD MERCHANT PRODUCTS + ANALYTICS
+   * ======================================================= */
+
+  async function loadUserProducts(user) {
+    if (!user || !merchantProductsList) return;
+
+    merchantProductsList.innerHTML =
+      '<li class="muted">Loading your products...</li>';
+
+    try {
+      const { data, error } = await supabaseClient
+        .from("products")
+        .select("*")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        merchantProductsList.innerHTML =
+          '<li class="muted">Could not load products.</li>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        merchantProductsList.innerHTML =
+          '<li class="muted">No products yet. Use “List an Item for Sale” to add your first item.</li>';
+      } else {
+        merchantProductsList.innerHTML = "";
+        let totalValue = 0;
+
+        data.forEach((prod) => {
+          const li = document.createElement("li");
+          const price = typeof prod.price === "number" ? prod.price : 0;
+          totalValue += price;
+
+          li.textContent = `${prod.title} — $${price.toFixed(2)}`;
+          merchantProductsList.appendChild(li);
+        });
+
+        // Update analytics
+        if (statTotalProducts) {
+          statTotalProducts.textContent = data.length.toString();
+        }
+        if (statTotalValue) {
+          statTotalValue.textContent = `$${totalValue.toFixed(2)}`;
+        }
+        if (statTotalOrders) {
+          // For now, demo value = 0; future work: compute from orders table
+          statTotalOrders.textContent = "0";
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      merchantProductsList.innerHTML =
+        '<li class="muted">Error loading products.</li>';
+    }
+  }
+
+  /* =======================================================
+   * PLAID LINK (Bank connection after signup/login)
    * ======================================================= */
 
   async function createLinkToken() {
@@ -323,6 +488,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // NOTE: Plaid is now only initialized after login,
-  // via onAuthSuccess() -> initPlaidLink().
+  // NOTE: Plaid is initialized as part of onAuthSuccess() after login/sign-up.
 });
