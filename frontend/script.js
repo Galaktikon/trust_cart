@@ -18,7 +18,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.addEventListener("DOMContentLoaded", () => {
   /* =======================================================
-   *  AUTH SECTION (Mock auth using localStorage)
+   *  AUTH SECTION (auth using supabase)
    * ======================================================= */
 
   const loginForm = document.getElementById("loginForm");
@@ -74,30 +74,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return pass.length >= 6;
   }
 
-  function saveUser(name, email, password) {
-    const users = JSON.parse(localStorage.getItem("trustcart_users")) || [];
-    const exists = users.find((u) => u.email === email);
-    if (exists) return false;
-    users.push({ name, email, password });
-    localStorage.setItem("trustcart_users", JSON.stringify(users));
-    return true;
+  async function getLoggedInUser() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    return user;
   }
 
-  function authenticateUser(email, password) {
-    const users = JSON.parse(localStorage.getItem("trustcart_users")) || [];
-    return users.find((u) => u.email === email && u.password === password);
-  }
-
-  function setLoggedInUser(user) {
-    localStorage.setItem("trustcart_logged_in", JSON.stringify(user));
-  }
-
-  function getLoggedInUser() {
-    return JSON.parse(localStorage.getItem("trustcart_logged_in"));
-  }
-
-  function logoutUser() {
-    localStorage.removeItem("trustcart_logged_in");
+  async function logoutUser() {
+    await supabaseClient.auth.signOut();
     showToast("Logged out", "success");
     setTimeout(() => window.location.reload(), 500);
   }
@@ -140,23 +123,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
       if (error) {
-        // Auto-signup fallback
         alert(error.message);
-        /*const { data: signupData, error: signupErr } = await supabaseClient.auth.signUp({ email, password });
-        if (signupErr) return alert(signupErr.message);
-        alert("Signed up! Verify your email.");*/
         return;
       }
 
-      setLoggedInUser(user);
       showToast("Logged in!", "success");
     });
   }
 
   if (registerForm) {
-    registerForm.addEventListener("submit", (e) => {
+    registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const name = (regName?.value || "").trim();
@@ -176,13 +153,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const saved = saveUser(name, email, password);
-      if (!saved) {
-        showToast("Email already registered", "error");
-        return;
-      }
+      const { data: signupData, error: signupErr } = await supabaseClient.auth.signUp({ email, password });
+      if (signupErr) return alert(signupErr.message);
 
-      showToast("Account created!", "success");
+      showToast("Account created! Verify your email.", "success");
 
       registerForm.reset();
       registerForm.classList.add("hidden");
