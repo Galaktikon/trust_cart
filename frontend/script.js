@@ -189,6 +189,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Logged in!", "success");
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${BACKEND_URL}/test`, {
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`
+      }
+      });
+
+    const json = await res.json();
+    console.log(JSON.stringify(json, null, 2));
+
       if (data?.user) {
         await onAuthSuccess(data.user);
       } else if (data?.session?.user) {
