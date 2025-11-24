@@ -1,24 +1,28 @@
 /************************************************************
  * TrustCart - Frontend Logic (Auth + Plaid Link)
- *
- * API BASE URL FOR YOUR BACKEND SERVER
  ************************************************************/
 
-// API Configuration
-const API_BASE_URL = 'https://trust-cart-backend.onrender.com';
+// API Configuration (your backend with Plaid endpoints)
+const API_BASE_URL = "https://trust-cart-backend.onrender.com";
 
-//Supabase Configuration
+// Supabase Configuration
 const SUPABASE_URL = "https://semkimaoxlmxtyhlhada.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlbWtpbWFveGxteHR5aGxoYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMjMyNzIsImV4cCI6MjA3ODg5OTI3Mn0.RaOsVMI2UQULkWCYgJGntpNpndaqM1HIi4XHOkJb9kY";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlbWtpbWFveGxteHR5aGxoYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMjMyNzIsImV4cCI6MjA3ODg5OTI3Mn0.RaOsVMI2UQULkWCYgJGntpNpndaqM1HIi4XHOkJb9k";
+
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Plaid state
+let plaidInitialized = false;
+let plaidHandler = null;
+
 /************************************************************
- * Rest of the script
+ * Main script
  ************************************************************/
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   /* =======================================================
-   *  AUTH SECTION (auth using supabase)
+   *  AUTH SECTION (Supabase email/password)
    * ======================================================= */
 
   const loginForm = document.getElementById("loginForm");
@@ -32,6 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const regName = document.getElementById("regName");
   const regEmail = document.getElementById("regEmail");
   const regPassword = document.getElementById("regPassword");
+
+  const bankSection = document.getElementById("bank");
+  const linkButton = document.getElementById("link-bank-btn");
+
+  /* ---------- Helpers ---------- */
 
   function showToast(message, type = "info") {
     const box = document.createElement("div");
@@ -74,25 +83,51 @@ document.addEventListener("DOMContentLoaded", () => {
     return pass.length >= 6;
   }
 
-  async function getLoggedInUser() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    return user;
+  // Called whenever auth succeeds (login OR user already logged in)
+  async function onAuthSuccess(user) {
+    if (!user) return;
+
+    const displayName =
+      user.user_metadata?.full_name || user.email || "User";
+
+    showToast(`Welcome, ${displayName}`, "success");
+
+    // Show the "Connect Bank/Card" section
+    if (bankSection) {
+      bankSection.classList.remove("hidden");
+    }
+
+    // Initialize Plaid (only once)
+    if (linkButton && !plaidInitialized) {
+      await initPlaidLink();
+    }
   }
 
   async function logoutUser() {
     await supabaseClient.auth.signOut();
     showToast("Logged out", "success");
+    // Simple refresh to clear UI state
     setTimeout(() => window.location.reload(), 500);
   }
 
+  // Expose logout for navbar button
   window.trustcartLogout = logoutUser;
 
-  const currentUser = getLoggedInUser();
-  if (currentUser) {
-    console.log("Logged in as:", currentUser.email);
-    showToast(`Welcome back, ${currentUser.name}`, "success");
+  /* =======================================================
+   *  CHECK IF USER ALREADY LOGGED IN (ON PAGE LOAD)
+   * ======================================================= */
+  try {
+    const { data } = await supabaseClient.auth.getUser();
+    if (data?.user) {
+      await onAuthSuccess(data.user);
+    }
+  } catch (err) {
+    console.error("Error checking current user:", err);
   }
 
+  /* =======================================================
+   *  TOGGLE LOGIN / REGISTER FORMS
+   * ======================================================= */
   if (showRegister && showLogin && loginForm && registerForm) {
     showRegister.addEventListener("click", (e) => {
       e.preventDefault();
@@ -107,6 +142,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  /* =======================================================
+   *  LOGIN HANDLER
+   * ======================================================= */
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -122,16 +160,35 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) {
-        alert(error.message);
+        console.error(error);
+        showToast(error.message || "Login failed", "error");
         return;
       }
 
       showToast("Logged in!", "success");
+
+      // data.session.user is available here
+      if (data?.user) {
+        await onAuthSuccess(data.user);
+      } else if (data?.session?.user) {
+        await onAuthSuccess(data.session.user);
+      } else {
+        // fallback: re-fetch user
+        const { data: userData } = await supabaseClient.auth.getUser();
+        await onAuthSuccess(userData?.user);
+      }
     });
   }
 
+  /* =======================================================
+   *  REGISTER HANDLER
+   * ======================================================= */
   if (registerForm) {
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -153,31 +210,39 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const { data: signupData, error: signupErr } = await supabaseClient.auth.signUp({ email, password });
-      if (signupErr) return alert(signupErr.message);
+      const { data: signupData, error: signupErr } =
+        await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+            },
+          },
+        });
 
-      const res = await fetch(`${BACKEND_URL}/test`, {
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session?.access_token}`
-        }
-      });
+      if (signupErr) {
+        console.error(signupErr);
+        showToast(signupErr.message || "Sign-up failed", "error");
+        return;
+      }
 
-      const json = await res.json();
-      console.log(JSON.stringify(json, null, 2));
-
-      showToast("Account created! Verify your email.", "success");
+      showToast("Account created! Check your email to verify.", "success");
 
       registerForm.reset();
       registerForm.classList.add("hidden");
-      loginForm.classList.remove("hidden");
+      if (loginForm) loginForm.classList.remove("hidden");
     });
   }
 
+  /* =======================================================
+   *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (no DB yet)
+   * ======================================================= */
   const productButtons = document.querySelectorAll(".product-button");
   productButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       showToast("Added to cart", "success");
+      // Later: update DOM or Supabase with real cart logic
     });
   });
 
@@ -185,12 +250,10 @@ document.addEventListener("DOMContentLoaded", () => {
    * PLAID LINK SECTION (Frontend Part)
    * ======================================================= */
 
-  const linkButton = document.getElementById("link-bank-btn");
-
   async function createLinkToken() {
     const res = await fetch(`${API_BASE_URL}/create_link_token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
 
     if (!res.ok) throw new Error("Unable to create link token");
@@ -203,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const res = await fetch(`${API_BASE_URL}/exchange_public_token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ public_token, metadata })
+      body: JSON.stringify({ public_token, metadata }),
     });
 
     if (!res.ok) throw new Error("Error exchanging public token");
@@ -211,15 +274,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function initPlaidLink() {
+    if (plaidInitialized) return;
+    plaidInitialized = true;
+
     if (typeof Plaid === "undefined") {
       showToast("Plaid Link script missing", "error");
+      console.error("Plaid global not found. Check script tag in HTML.");
+      return;
+    }
+
+    if (!linkButton) {
+      console.warn("link-bank-btn not found in DOM.");
       return;
     }
 
     try {
       const linkToken = await createLinkToken();
 
-      const handler = Plaid.create({
+      plaidHandler = Plaid.create({
         token: linkToken,
         onSuccess: async (public_token, metadata) => {
           showToast("Bank linked!", "success");
@@ -232,22 +304,25 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         },
         onExit: (err, metadata) => {
-          if (err) showToast("Bank connection canceled", "error");
-        }
+          if (err) {
+            console.error("Plaid exit with error:", err, metadata);
+            showToast("Bank connection canceled", "error");
+          }
+        },
       });
 
       linkButton.addEventListener("click", (e) => {
         e.preventDefault();
-        handler.open();
+        if (plaidHandler) {
+          plaidHandler.open();
+        }
       });
-
     } catch (err) {
       console.error(err);
       showToast("Could not initialize Plaid", "error");
     }
   }
 
-  if (linkButton) {
-    initPlaidLink();
-  }
+  // NOTE: Plaid is now only initialized after login,
+  // via onAuthSuccess() -> initPlaidLink().
 });
