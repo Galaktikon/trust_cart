@@ -40,10 +40,11 @@ async def test(request: Request):
     user = await verify_token(request)
 
     # Example DB query
-    data = supabase.table("profiles").select("*").eq("email", user.email).execute()
+    data = supabase.table("users").select("*").eq("email", user.id).execute()
 
     return {
         "message": "Hello from Python backend!",
         "user": user.email,
+        "id": user.id,
         "db_data": data.data,
     }
