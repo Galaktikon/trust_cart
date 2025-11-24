@@ -156,6 +156,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const { data: signupData, error: signupErr } = await supabaseClient.auth.signUp({ email, password });
       if (signupErr) return alert(signupErr.message);
 
+      const res = await fetch(`${BACKEND_URL}/test`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`
+        }
+      });
+
+      const json = await res.json();
+      console.log(JSON.stringify(json, null, 2));
+
       showToast("Account created! Verify your email.", "success");
 
       registerForm.reset();
