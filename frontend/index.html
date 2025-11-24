@@ -13,15 +13,14 @@
     rel="stylesheet"
   />
 
-  <!-- Main stylesheet (same folder as this file) -->
+  <!-- Main stylesheet -->
   <link rel="stylesheet" href="styles.css">
 
-  <!-- Plaid Link script (required for bank connection) -->
+  <!-- Plaid Link script (for bank/card connection) -->
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 
-  <!-- Supabase script -->  
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <!-- Supabase script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <!-- ===================== NAVBAR ===================== -->
@@ -32,7 +31,7 @@
     <nav class="navbar-right">
       <a href="#top" class="nav-link active">Home</a>
       <a href="#products" class="nav-link">Products</a>
-      <a href="#bank" class="nav-link">Bank</a>
+      <a href="#cart" class="nav-link">Cart</a>
       <!-- Logout uses function from script.js -->
       <button
         type="button"
@@ -55,8 +54,8 @@
       <div class="hero-content">
         <h1>Shop smarter with TrustCart.</h1>
         <p>
-          A secure, modern e-commerce experience with integrated banking. 
-          Manage your shopping, spending, and accounts all in one place.
+          A secure, modern e-commerce experience. 
+          Manage your shopping, spending, and wishlists all in one place.
         </p>
 
         <div class="hero-actions">
@@ -65,7 +64,7 @@
         </div>
 
         <p class="hero-tagline">
-          Encrypted checkout • Buyer protection • Bank account integration
+          Secure checkout • Buyer protection • Smart cart & payment integration
         </p>
       </div>
     </section>
@@ -75,7 +74,7 @@
       <div class="auth-card">
         <h2 class="auth-title">Welcome to TrustCart</h2>
         <p class="auth-subtitle">
-          Login or create a new account to start shopping and connect your bank.
+          Login or create a new account to start shopping and manage your cart.
         </p>
 
         <!-- LOGIN FORM -->
@@ -153,16 +152,29 @@
     </aside>
   </main>
 
-  <!-- ===================== BANK SECTION (PLAID) ===================== -->
-  <section class="products-section" id="bank">
-    <h2>Connect Your Bank</h2>
+  <!-- ===================== CART SECTION ===================== -->
+  <section class="products-section" id="cart">
+    <h2>Your Cart</h2>
     <p style="max-width: 520px; color: #9ca3af; font-size: 14px;">
-      Link your bank account securely using Plaid to view balances, track
-      spending, and build a smarter checkout experience inside TrustCart.
+      Review and manage the items in your TrustCart shopping cart.
+    </p>
+
+    <div id="cart-items" class="cart-container">
+      <!-- Cart items will be displayed dynamically -->
+      <p style="color:#555;">Your cart is currently empty.</p>
+    </div>
+  </section>
+
+  <!-- ===================== BANK / PAYMENT SECTION (HIDDEN UNTIL LOGIN) ===================== -->
+  <section class="products-section hidden" id="bank">
+    <h2>Connect Bank or Card</h2>
+    <p style="max-width: 520px; color: #9ca3af; font-size: 14px;">
+      After logging in, securely connect your bank or card using Plaid to power
+      smarter payments and transaction tracking in TrustCart.
     </p>
 
     <button id="link-bank-btn" class="primary-btn" style="margin-top: 12px;">
-      Connect your bank
+      Connect bank or card
     </button>
   </section>
 
@@ -198,10 +210,10 @@
 
   <!-- ===================== FOOTER ===================== -->
   <footer class="footer">
-    © 2025 TrustCart · Secure E-Commerce & Banking Integration
+    © 2025 TrustCart · Secure E-Commerce & Payment Integration
   </footer>
 
-  <!-- Load your main JS (handles auth, Plaid, etc.) -->
+  <!-- Load your main JS (handles auth, Plaid, cart, etc.) -->
   <script src="script.js"></script>
 </body>
 </html>
