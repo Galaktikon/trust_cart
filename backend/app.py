@@ -35,7 +35,7 @@ async def verify_token(request: Request):
 
 
 # --- TEST ENDPOINT ---
-@app.get("/test")
+@app.post("/test")
 async def test(request: Request):
     user = await verify_token(request)
     print(f"Authenticated user: {user}")
