@@ -38,7 +38,7 @@ async def verify_token(request: Request):
 @app.get("/test")
 async def test(request: Request):
     user = await verify_token(request)
-
+    print(f"Authenticated user: {user}")
     # Example DB query
     data = supabase.table("users").select("*").eq("email", user.id).execute()
 
