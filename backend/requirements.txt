@@ -7,4 +7,4 @@ uvicorn[standard]
 supabase
 python-dotenv
 httpx
-jwt
+PyJWT
