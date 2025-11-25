@@ -24,7 +24,7 @@ async def preflight_handler():
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+JWT_SECRET = os.getenv("SUPABASE_ANON_KEY")
 JWT_ALGO = "HS256"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
@@ -51,11 +51,11 @@ async def test(request: Request):
     user = await verify_token(request)
     print(f"Authenticated user: {user}")
     # Example DB query
-    data = supabase.table("users").select("*").eq("email", user.id).execute()
+    data = supabase.table("users").select("*").eq("email", user["sub"]).execute()
 
     return {
         "message": "Hello from Python backend!",
-        "user": user.email,
-        "id": user.id,
+        "user": user["email"],
+        "id": user["sub"],
         "db_data": data.data,
     }
