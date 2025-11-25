@@ -24,8 +24,8 @@ async def preflight_handler():
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-JWT_SECRET = os.getenv("SUPABASE_ANON_KEY")
 JWT_ALGO = "HS256"
+JWT_SECRET = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
 
@@ -36,13 +36,14 @@ async def verify_token(request: Request):
         raise HTTPException(status_code=401, detail="Missing Authorization header")
 
     token = auth.split(" ")[1]
-    
+
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
     except PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
     return payload
+
 
 
 # --- TEST ENDPOINT ---

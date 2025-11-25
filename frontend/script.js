@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch(`${API_BASE_URL}/test`, {
       headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`
+          "Authorization": `Bearer ${session.access_token}`
       }
       });
 
