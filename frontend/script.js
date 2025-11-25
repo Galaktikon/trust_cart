@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       showToast("Logged in!", "success");
 
       const { data: { session } } = await supabaseClient.auth.getSession();
-      const res = await fetch(`${BACKEND_URL}/test`, {
+      const res = await fetch(`${API_BASE_URL}/test`, {
       headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.access_token}`
