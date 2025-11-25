@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
+import jwt
+from jwt import PyJWTError
 import os
 
 app = FastAPI()
@@ -22,6 +24,9 @@ async def preflight_handler():
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
+JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+JWT_ALGO = "HS256"
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
 
 # --- VERIFY TOKEN ---
@@ -31,11 +36,13 @@ async def verify_token(request: Request):
         raise HTTPException(status_code=401, detail="Missing Authorization header")
 
     token = auth.split(" ")[1]
-    user = supabase.auth.get_user(token)
-    if not user or not user.user:
+    
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+    except PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    return user.user
+    return payload
 
 
 # --- TEST ENDPOINT ---
