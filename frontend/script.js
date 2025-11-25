@@ -190,6 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const { data: { session } } = await supabaseClient.auth.getSession();
       const res = await fetch(`${API_BASE_URL}/test`, {
+      method: "POST",
       headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session?.access_token}`
