@@ -14,6 +14,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.options("/{path:path}")
+async def preflight_handler():
+    return {}
+
 # --- SUPABASE CLIENT ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -35,7 +39,7 @@ async def verify_token(request: Request):
 
 
 # --- TEST ENDPOINT ---
-@app.post("/test")
+@app.get("/test")
 async def test(request: Request):
     user = await verify_token(request)
     print(f"Authenticated user: {user}")
