@@ -8,7 +8,7 @@ app = FastAPI()
 # --- CORS (allow your frontend domain) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to your actual frontend domain on Render
+    allow_origins=["https://trust-cart-731s.onrender.com"],  # Change to your actual frontend domain on Render
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
