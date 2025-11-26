@@ -23,26 +23,24 @@ async def preflight_handler():
 # --- SUPABASE CLIENT ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 
 JWT_ALGO = "HS256"
-JWT_SECRET = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # --- VERIFY TOKEN ---
 async def verify_token(request: Request):
     auth = request.headers.get("Authorization")
-    if not auth:
-        raise HTTPException(status_code=401, detail="Missing Authorization header")
+    if not auth or not auth.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Missing auth token")
+    token = auth.split(" ", 1)[1]
 
-    token = auth.split(" ")[1]
-
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
-    except PyJWTError:
+    user_resp = supabase.auth.get_user(token)
+    if user_resp.user is None:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-    return payload
+    return user_resp.user
 
 
 
@@ -60,3 +58,7 @@ async def test(request: Request):
         "id": user["sub"],
         "db_data": data.data,
     }
+
+@app.route("/hello")
+def hello():
+    return jsonify(message="Hello from Python backend")
