@@ -59,18 +59,17 @@ async def test(request: Request):
     #data = supabase.table("users").select("*").eq("email", user["sub"]).execute()
 
     try:
-       response = (
+        response = (
             supabase
                 .table("users")
                 .insert({
                     "id": user.id,
                     "role": "admin",
-                    "display_name": 'Josiah James',
+                    "display_name": "Josiah James",
                 })
-                .select("*")     
+                .select("*")
                 .execute()
         )
-
         print(response.data)
 
     except Exception as e:
