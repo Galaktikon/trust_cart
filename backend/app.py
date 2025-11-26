@@ -24,8 +24,6 @@ app.add_middleware(
     ],
 )
 
-
-
 # --- SUPABASE CLIENT ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -35,6 +33,7 @@ JWT_ALGO = "HS256"
 JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
 
 # --- VERIFY TOKEN ---
 async def verify_token(request: Request):
@@ -47,7 +46,6 @@ async def verify_token(request: Request):
     if user_resp.user is None:
         raise HTTPException(status_code=401, detail="Invalid token")
     return user_resp.user
-
 
 
 # --- TEST ENDPOINT ---
@@ -81,6 +79,27 @@ async def test(request: Request):
         )
 
         print(user_row.data)
+
+        response = (
+            supabase
+                .table("users")
+                .update({
+                    "role": "customer",
+                    "display_name": "JJ"
+                })
+                .eq("id", user.id)
+                .execute()
+        )
+
+        response = (
+            supabase
+                .table("users")
+                .delete()
+                .eq("id", user.id)
+                .execute()
+        )
+
+        print(response.data)
 
     except Exception as e:
         print(f"Error inserting user: {e}")
