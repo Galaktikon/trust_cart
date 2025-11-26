@@ -10,15 +10,12 @@ app = FastAPI()
 # --- CORS (allow your frontend domain) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://trust-cart-731s.onrender.com"],  # Change to your actual frontend domain on Render
+    allow_origins=["https://trust-cart-731s.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.options("/{path:path}")
-async def preflight_handler():
-    return {}
 
 # --- SUPABASE CLIENT ---
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -58,7 +55,3 @@ async def test(request: Request):
         "id": user["sub"],
         "db_data": data.data,
     }
-
-@app.route("/hello")
-def hello():
-    return jsonify(message="Hello from Python backend")
