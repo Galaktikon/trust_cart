@@ -59,7 +59,8 @@ async def test(request: Request):
     #data = supabase.table("users").select("*").eq("email", user["sub"]).execute()
 
     try:
-        response = (
+        # Insert the row
+        insert_result = (
             supabase
                 .table("users")
                 .insert({
@@ -67,13 +68,23 @@ async def test(request: Request):
                     "role": "admin",
                     "display_name": "Josiah James",
                 })
-                .select("*")
                 .execute()
         )
-        print(response.data)
+
+        # Fetch the just-inserted row
+        user_row = (
+            supabase
+                .table("users")
+                .select("*")
+                .eq("id", user.id)
+                .execute()
+        )
+
+        print(user_row.data)
 
     except Exception as e:
         print(f"Error inserting user: {e}")
+
 
     return {
         "message": "Hello from Python backend!",
