@@ -296,14 +296,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       bankSection.classList.remove("hidden");
     }
 
-    // Call backend /test endpoint (example)
-    try {
-      const { json } = await callBackend("/test", { method: "GET" });
-      console.log("Backend /test response:", JSON.stringify(json, null, 2));
-    } catch (err) {
-      console.error("Error calling /test endpoint:", err);
-    }
-
     // Initialize Plaid (only once)
     if (linkButton && !plaidInitialized) {
       await initPlaidLink();
@@ -520,7 +512,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { data, error } = await supabaseClient
         .from("users")
         .insert({
-          id: user.id,
+          id: signupData.session.user.id,
           role: "customer",
           display_name: name
         });
