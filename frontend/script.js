@@ -517,7 +517,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await onAuthSuccess(signupData.session.user);
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("users")
         .insert({
           id: user.id,
