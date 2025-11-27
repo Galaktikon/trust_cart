@@ -1,4 +1,4 @@
-/************************************************************
+/************************************************************ 
  * TrustCart - Frontend Logic (Auth + Products + Plaid Link)
  * Authorization: Bearer <supabase_jwt>
  *
@@ -36,6 +36,12 @@ document.addEventListener("DOMContentLoaded", async () => {
    *  DOM ELEMENTS
    * ======================================================= */
 
+  // High-level sections for auth gating
+  const authSection = document.getElementById("authSection");
+  const dashboardSection = document.getElementById("dashboard");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  // Auth forms / fields
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
   const showRegister = document.getElementById("showRegister");
@@ -48,6 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const regEmail = document.getElementById("regEmail");
   const regPassword = document.getElementById("regPassword");
 
+  // Dashboard elements
   const bankSection = document.getElementById("bank");
   const linkButton = document.getElementById("link-bank-btn");
 
@@ -61,11 +68,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const itemPrice = document.getElementById("itemPrice");
   const itemDescription = document.getElementById("itemDescription");
   const itemImage = document.getElementById("itemImage");
-
-  // NEW: top-level sections for auth vs dashboard, and logout button
-  const authSection = document.getElementById("authSection");
-  const dashboardSection = document.getElementById("dashboard");
-  const logoutBtn = document.getElementById("logoutBtn");
 
   /* =======================================================
    *  HELPERS
@@ -110,6 +112,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function isValidPassword(pass) {
     return pass.length >= 6;
+  }
+
+  /**
+   * Simple UI mode helpers:
+   *  - showAuthUI(): only login/register visible
+   *  - showDashboardUI(): only dashboard visible
+   */
+  function showAuthUI() {
+    if (authSection) authSection.classList.remove("hidden");
+    if (dashboardSection) dashboardSection.classList.add("hidden");
+    if (logoutBtn) logoutBtn.classList.add("hidden");
+  }
+
+  function showDashboardUI() {
+    if (authSection) authSection.classList.add("hidden");
+    if (dashboardSection) dashboardSection.classList.remove("hidden");
+    if (logoutBtn) logoutBtn.classList.remove("hidden");
+
+    // Optional: scroll to top of dashboard
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   /**
@@ -189,33 +211,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     return { json, res };
   }
 
-  /**
-   * Show dashboard, hide auth, and show logout button.
-   */
-  function showDashboardUI() {
-    if (authSection) authSection.classList.add("hidden");
-    if (dashboardSection) dashboardSection.classList.remove("hidden");
-    if (logoutBtn) logoutBtn.classList.remove("hidden");
-  }
-
-  /**
-   * Show auth, hide dashboard, and hide logout button.
-   */
-  function showAuthUI() {
-    if (authSection) authSection.classList.remove("hidden");
-    if (dashboardSection) dashboardSection.classList.add("hidden");
-    if (logoutBtn) logoutBtn.classList.add("hidden");
-  }
-
   // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
 
+    // Switch UI into "dashboard" mode
+    showDashboardUI();
+
     const displayName =
       user.user_metadata?.full_name || user.email || "Merchant";
-
-    // Switch UI to dashboard mode
-    showDashboardUI();
 
     showToast(`Welcome, ${displayName}`, "success");
 
@@ -240,9 +244,6 @@ document.addEventListener("DOMContentLoaded", async () => {
        */
       const { json } = await callBackend("/test", { method: "GET" });
       console.log("Backend /test response:", JSON.stringify(json, null, 2));
-
-      // Example UI usage (optional):
-      // showToast(json.message || "Backend connected", "success");
     } catch (err) {
       console.error("Error calling /test endpoint:", err);
     }
@@ -258,7 +259,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function logoutUser() {
     await supabaseClient.auth.signOut();
+    showAuthUI();
     showToast("Logged out", "success");
+    // optional reload so Supabase state is fully reset
     setTimeout(() => window.location.reload(), 500);
   }
 
@@ -272,21 +275,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const { data } = await supabaseClient.auth.getUser();
     if (data?.user) {
-      // User is logged in → show dashboard immediately and hydrate
-      showDashboardUI();
+      // Session exists -> go straight to dashboard
       await onAuthSuccess(data.user);
     } else {
-      // Not logged in → show auth section
+      // No user -> show auth screen
       showAuthUI();
     }
   } catch (err) {
     console.error("Error checking current user:", err);
-    // On error, safest is to show auth
     showAuthUI();
   }
 
   /* =======================================================
    *  TOGGLE LOGIN / REGISTER FORMS
+   *  (Optional: on small screens you can flip between them)
    * ======================================================= */
 
   if (showRegister && showLogin && loginForm && registerForm) {
