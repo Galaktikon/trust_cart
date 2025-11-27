@@ -385,6 +385,91 @@
       font-size: 13px;
       color: #9ca3af;
     }
+
+    /* ===== NEW: Home widgets section ===== */
+
+    .home-widgets {
+      margin-top: 12px;
+    }
+
+    .home-widget-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .home-widget-card {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 14px;
+      padding: 12px 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    .home-widget-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .home-widget-body {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .home-widget-link {
+      font-size: 12px;
+      padding: 5px 10px;
+    }
+
+    /* ===== NEW: Marketplace grid ===== */
+
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .market-card {
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.98);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .market-image {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      background: #020617;
+    }
+
+    .market-body {
+      padding: 10px 11px 11px;
+    }
+
+    .market-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .market-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: #facc15;
+      margin-top: 4px;
+    }
+
+    .market-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
   </style>
 </head>
 
@@ -394,9 +479,9 @@
       TRUSTCART<span class="badge">BETA</span>
     </div>
     <nav class="top-nav">
-      <button class="nav-pill" type="button">Home</button>
-      <button class="nav-pill faded" type="button">Marketplace</button>
-      <!-- IDs added here so JS can control them -->
+      <!-- IDs added so JS can hook them, but behavior preserved -->
+      <button id="navHomeBtn" class="nav-pill" type="button">Home</button>
+      <button id="navMarketplaceBtn" class="nav-pill faded" type="button">Marketplace</button>
       <button id="navDashboardBtn" class="nav-pill faded" type="button">Dashboard</button>
       <button id="navCartBtn" class="nav-pill faded" type="button">Cart</button>
       <button id="navSellBtn" class="nav-pill faded" type="button">Sell</button>
@@ -517,13 +602,71 @@
 
     <!-- ===========================
          DASHBOARD SHELL (AFTER LOGIN)
-         Now split into Dashboard / Sell / Cart sections
     ============================ -->
     <div id="dashboard" class="hidden">
-      <!-- DASHBOARD VIEW -->
+      <!-- DASHBOARD VIEW (also acts as logged-in "homepage") -->
       <section id="dashboardView">
+        <!-- NEW: Home widgets showing tabs -->
+        <div class="card home-widgets">
+          <div class="section-title">Your TrustCart Workspace</div>
+          <div class="home-widget-grid">
+            <div class="home-widget-card">
+              <div class="home-widget-title">Dashboard</div>
+              <div class="home-widget-body">
+                View store metrics, inventory value, and activity at a glance.
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline home-widget-link"
+                data-view="dashboard"
+              >
+                Open dashboard
+              </button>
+            </div>
+            <div class="home-widget-card">
+              <div class="home-widget-title">Marketplace</div>
+              <div class="home-widget-body">
+                Browse featured items across TrustCart’s open marketplace.
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline home-widget-link"
+                data-view="marketplace"
+              >
+                Open marketplace
+              </button>
+            </div>
+            <div class="home-widget-card">
+              <div class="home-widget-title">Cart</div>
+              <div class="home-widget-body">
+                Keep track of what you’re about to purchase from other merchants.
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline home-widget-link"
+                data-view="cart"
+              >
+                View cart
+              </button>
+            </div>
+            <div class="home-widget-card">
+              <div class="home-widget-title">Sell</div>
+              <div class="home-widget-body">
+                Connect your bank and list new products with images and pricing.
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline home-widget-link"
+                data-view="sell"
+              >
+                List an item
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- HERO + METRICS -->
-        <div class="dashboard-hero">
+        <div class="dashboard-hero mt-4">
           <div class="dashboard-hero-main">
             <h1 class="dashboard-hero-title">Merchant Dashboard</h1>
             <p class="dashboard-hero-sub">
@@ -581,6 +724,83 @@
           <ul id="merchantProducts" class="product-listing mt-3">
             <li class="muted">Could not load products.</li>
           </ul>
+        </div>
+
+        <!-- NEW: Marketplace section (grid of items) -->
+        <div id="marketplaceSection" class="card mt-4">
+          <div class="section-title">Marketplace</div>
+          <h2 class="section-heading">Browse featured items</h2>
+          <p class="section-body">
+            This demo marketplace shows example listings in a responsive grid. In a later version,
+            this will be driven by a public <code>products</code> table with real merchant data.
+          </p>
+
+          <div class="market-grid mt-3">
+            <!-- 9 sample cards (3×3 feel on desktop) -->
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">TrustCart Hoodie</div>
+                <div class="market-meta">Soft fleece • Unisex fit</div>
+                <div class="market-price">$39.99</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Smart Escrow Wallet</div>
+                <div class="market-meta">On-chain guarded payments</div>
+                <div class="market-price">$129.00</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Merchant Analytics Pro</div>
+                <div class="market-meta">Advanced reporting add-on</div>
+                <div class="market-price">$19.00/mo</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Priority Payouts</div>
+                <div class="market-meta">Next-day settlements</div>
+                <div class="market-price">$9.00/mo</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Customer Trust Badge Pack</div>
+                <div class="market-meta">Badges for high-rated sellers</div>
+                <div class="market-price">$24.99</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Dispute Resolution Bundle</div>
+                <div class="market-meta">Escrow + mediation tools</div>
+                <div class="market-price">$59.00</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Crypto Checkout Beta</div>
+                <div class="market-meta">USDC / stablecoin support</div>
+                <div class="market-price">$0 (waitlist)</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Chargeback Shield</div>
+                <div class="market-meta">Fraud-detection ruleset</div>
+                <div class="market-price">$14.00/mo</div>
+              </div>
+            </div>
+            <div class="market-card">
+              <div class="market-body">
+                <div class="market-title">Notary Integration Add-on</div>
+                <div class="market-meta">For high-value contracts</div>
+                <div class="market-price">$49.00</div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
