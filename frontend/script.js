@@ -41,6 +41,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const dashboardSection = document.getElementById("dashboard");
   const logoutBtn = document.getElementById("logoutBtn");
 
+  // Top nav for dashboard views
+  const navHomeBtn = document.getElementById("navHomeBtn");
+  const navMarketplaceBtn = document.getElementById("navMarketplaceBtn");
+  const dashboardHome = document.getElementById("dashboardHome");
+  const dashboardMarketplace = document.getElementById("dashboardMarketplace");
+
   // Auth forms / fields
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
@@ -68,6 +74,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const itemPrice = document.getElementById("itemPrice");
   const itemDescription = document.getElementById("itemDescription");
   const itemImage = document.getElementById("itemImage");
+
+  // Track if user is logged in (for nav protection)
+  let isLoggedIn = false;
 
   /* =======================================================
    *  HELPERS
@@ -115,20 +124,61 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /**
+   * Switch between dashboard sub-views (Home vs Marketplace)
+   */
+  function setDashboardView(view) {
+    if (!dashboardSection) return;
+
+    if (view === "marketplace") {
+      if (dashboardHome) dashboardHome.classList.add("hidden");
+      if (dashboardMarketplace) dashboardMarketplace.classList.remove("hidden");
+
+      if (navHomeBtn) {
+        navHomeBtn.classList.remove("active");
+        navHomeBtn.classList.add("faded");
+      }
+      if (navMarketplaceBtn) {
+        navMarketplaceBtn.classList.add("active");
+        navMarketplaceBtn.classList.remove("faded");
+      }
+    } else {
+      // default to home
+      if (dashboardHome) dashboardHome.classList.remove("hidden");
+      if (dashboardMarketplace) dashboardMarketplace.classList.add("hidden");
+
+      if (navHomeBtn) {
+        navHomeBtn.classList.add("active");
+        navHomeBtn.classList.remove("faded");
+      }
+      if (navMarketplaceBtn) {
+        navMarketplaceBtn.classList.remove("active");
+        navMarketplaceBtn.classList.add("faded");
+      }
+    }
+  }
+
+  /**
    * Simple UI mode helpers:
    *  - showAuthUI(): only login/register visible
    *  - showDashboardUI(): only dashboard visible
    */
   function showAuthUI() {
+    isLoggedIn = false;
     if (authSection) authSection.classList.remove("hidden");
     if (dashboardSection) dashboardSection.classList.add("hidden");
     if (logoutBtn) logoutBtn.classList.add("hidden");
+    // reset nav styling
+    setDashboardView("home");
   }
 
   function showDashboardUI() {
+    isLoggedIn = true;
     if (authSection) authSection.classList.add("hidden");
     if (dashboardSection) dashboardSection.classList.remove("hidden");
     if (logoutBtn) logoutBtn.classList.remove("hidden");
+
+    // default dashboard view = Home
+    setDashboardView("home");
 
     // Optional: scroll to top of dashboard
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -160,24 +210,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /**
    * Generic helper to call your FastAPI backend with auth.
-   *
-   * @param {string} endpoint - Path like "/test", "/create_link_token", etc.
-   * @param {Object} [options]
-   * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method="GET"]
-   * @param {Object|null} [options.body] - Plain JS object to be JSON.stringified.
-   *
-   * @returns {Promise<{ json: any, res: Response }>}
-   *
-   * Backend contract:
-   *  - Must always return JSON on success.
-   *  - On error, this function throws with a message including HTTP status and body text.
-   *
-   * Example for /test (from your FastAPI code):
-   *  {
-   *    "message": "Hello from Python backend!",
-   *    "user": "<user.email>",
-   *    "id": "<user.id>"
-   *  }
    */
   async function callBackend(endpoint, { method = "GET", body = null } = {}) {
     const headers = await getAuthHeaders();
@@ -230,18 +262,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- Call backend /test endpoint (example of standard call pattern) ---
     try {
-      /**
-       * Expected /test response shape (from FastAPI):
-       * {
-       *   "message": "Hello from Python backend!",
-       *   "user": "<user.email>",
-       *   "id": "<user.id>"
-       * }
-       *
-       * Frontend usage:
-       *  - Log it for debugging
-       *  - Optionally show message in a toast or use user/id to hydrate UI
-       */
       const { json } = await callBackend("/test", { method: "GET" });
       console.log("Backend /test response:", JSON.stringify(json, null, 2));
     } catch (err) {
@@ -269,6 +289,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.trustcartLogout = logoutUser;
 
   /* =======================================================
+   *  NAV BUTTON HANDLERS (Home / Marketplace)
+   * ======================================================= */
+
+  if (navHomeBtn) {
+    navHomeBtn.addEventListener("click", () => {
+      if (!isLoggedIn) {
+        showToast("Log in to access your dashboard.", "error");
+        return;
+      }
+      setDashboardView("home");
+    });
+  }
+
+  if (navMarketplaceBtn) {
+    navMarketplaceBtn.addEventListener("click", () => {
+      if (!isLoggedIn) {
+        showToast("Log in to explore the marketplace.", "error");
+        return;
+      }
+      setDashboardView("marketplace");
+    });
+  }
+
+  /* =======================================================
    *  CHECK IF USER ALREADY LOGGED IN (ON PAGE LOAD)
    * ======================================================= */
 
@@ -288,7 +332,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =======================================================
    *  TOGGLE LOGIN / REGISTER FORMS
-   *  (Optional: on small screens you can flip between them)
    * ======================================================= */
 
   if (showRegister && showLogin && loginForm && registerForm) {
@@ -349,7 +392,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =======================================================
-   *  REGISTER HANDLER (Sign up → then connect bank)
+   *  REGISTER HANDLER
    * ======================================================= */
 
   if (registerForm) {
@@ -561,23 +604,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =======================================================
    *  PLAID LINK (Bank connection after signup/login)
-   *  All Plaid calls now also use Authorization: Bearer <jwt>
    * ======================================================= */
 
-  /**
-   * Create a Plaid link_token via backend.
-   *
-   * Endpoint: POST /create_link_token
-   *
-   * Expected backend response shape:
-   *  {
-   *    "link_token": "<PLAID_LINK_TOKEN_STRING>",
-   *    // ...optionally extra fields for logging
-   *  }
-   *
-   * Frontend usage:
-   *  - Uses json.link_token to initialize Plaid Link.
-   */
   async function createLinkToken() {
     const { json } = await callBackend("/create_link_token", {
       method: "POST",
@@ -593,33 +621,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     return json.link_token;
   }
 
-  /**
-   * Exchange a Plaid public_token via backend.
-   *
-   * Endpoint: POST /exchange_public_token
-   *
-   * Expected backend response shape (recommended):
-   *  {
-   *    "status": "ok",
-   *    "item_id": "<plaid_item_id>",
-   *    "institution": {
-   *        "id": "<institution_id>",
-   *        "name": "<institution_name>"
-   *    }
-   *    // optionally: "account_ids": [...], "last4": "...", etc.
-   *  }
-   *
-   * Frontend usage:
-   *  - Currently only checks for success and shows toast.
-   *  - You could store institution name or last4 in the UI if backend returns it.
-   */
   async function exchangePublicToken(public_token, metadata) {
     const { json } = await callBackend("/exchange_public_token", {
       method: "POST",
       body: { public_token, metadata },
     });
 
-    // Example: ensure success status if your backend returns it
     if (json.status && json.status !== "ok") {
       throw new Error(
         `Backend /exchange_public_token returned non-ok status: ${json.status}`
