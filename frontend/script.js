@@ -517,6 +517,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         await onAuthSuccess(signupData.session.user);
       }
 
+      var registerBody = {
+        name: name,
+        email: email,
+        password: password
+      }
+
+      try {
+        const { json } = await callBackend("/register", { method: "POST" , body: JSON.stringify(registerBody) });
+        console.log("Backend /register response:", JSON.stringify(json, null, 2));
+      } catch (err) {
+        console.error("Error calling /register endpoint:", err);
+      }
+
       registerForm.reset();
       registerForm.classList.add("hidden");
       if (loginForm) loginForm.classList.remove("hidden");
