@@ -184,7 +184,7 @@ async def register(request: Request):
     # create a new user in the database
     body = await request.json()
 
-    new_user = create_user(body)
+    new_user = await create_user(body)
 
     return {
         "message": "Hello from Python backend!",
@@ -197,7 +197,7 @@ async def login(request: Request):
     user = await verify_token(request)
     body = await request.json()
 
-    new_store = create_store(body)
+    new_store = await create_store(body)
 
     return {
         "message": "Hello from Python backend!",
