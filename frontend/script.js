@@ -39,7 +39,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const dashboardSection = document.getElementById("dashboard");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // Nav buttons for sub-views (Dashboard / Cart / Sell)
+  // Nav buttons for sub-views
+  const navHomeBtn = document.getElementById("navHomeBtn");
+  const navMarketplaceBtn = document.getElementById("navMarketplaceBtn");
   const navDashboardBtn = document.getElementById("navDashboardBtn");
   const navCartBtn = document.getElementById("navCartBtn");
   const navSellBtn = document.getElementById("navSellBtn");
@@ -48,6 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const dashboardView = document.getElementById("dashboardView");
   const cartView = document.getElementById("cartView");
   const sellView = document.getElementById("sellView");
+  const marketplaceSection = document.getElementById("marketplaceSection");
+
+  // Home widget buttons
+  const homeWidgetLinks = document.querySelectorAll(".home-widget-link");
 
   // Auth forms / fields
   const loginForm = document.getElementById("loginForm");
@@ -126,42 +132,70 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /**
-   * Switch between Dashboard / Cart / Sell inside #dashboard
+   * Switch between Dashboard / Cart / Sell inside #dashboard.
+   * Also used for "home" (alias of dashboard) and "marketplace".
    */
   function setDashboardSubView(view) {
     if (!dashboardSection) return;
 
-    // Hide all sub-views
-    if (dashboardView) dashboardView.classList.add("hidden");
+    // Hide all sub-views (we only have one view container (dashboardView)
+    // plus cartView / sellView; marketplace lives inside dashboardView)
+    if (dashboardView) dashboardView.classList.remove("hidden");
     if (cartView) cartView.classList.add("hidden");
     if (sellView) sellView.classList.add("hidden");
 
     // Reset nav pills
-    [navDashboardBtn, navCartBtn, navSellBtn].forEach((btn) => {
-      if (!btn) return;
-      btn.classList.remove("active");
-      btn.classList.add("faded");
-    });
+    [navHomeBtn, navMarketplaceBtn, navDashboardBtn, navCartBtn, navSellBtn].forEach(
+      (btn) => {
+        if (!btn) return;
+        btn.classList.remove("active");
+        btn.classList.add("faded");
+      }
+    );
 
     if (view === "cart" && cartView) {
+      // Cart subview
+      dashboardView.classList.add("hidden");
       cartView.classList.remove("hidden");
       if (navCartBtn) {
         navCartBtn.classList.add("active");
         navCartBtn.classList.remove("faded");
       }
     } else if (view === "sell" && sellView) {
+      // Sell subview
+      dashboardView.classList.add("hidden");
       sellView.classList.remove("hidden");
       if (navSellBtn) {
         navSellBtn.classList.add("active");
         navSellBtn.classList.remove("faded");
       }
+    } else if (view === "marketplace") {
+      // Marketplace lives inside dashboardView, so keep dashboardView visible
+      if (dashboardView) dashboardView.classList.remove("hidden");
+      if (navMarketplaceBtn) {
+        navMarketplaceBtn.classList.add("active");
+        navMarketplaceBtn.classList.remove("faded");
+      }
+      // Scroll to marketplace section inside dashboard
+      if (marketplaceSection) {
+        marketplaceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else if (view === "home") {
+      // "Home" is just the top of dashboardView with widgets
+      if (dashboardView) dashboardView.classList.remove("hidden");
+      if (navHomeBtn) {
+        navHomeBtn.classList.add("active");
+        navHomeBtn.classList.remove("faded");
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      // default: dashboard
+      // default: dashboard metrics view
       if (dashboardView) dashboardView.classList.remove("hidden");
       if (navDashboardBtn) {
         navDashboardBtn.classList.add("active");
         navDashboardBtn.classList.remove("faded");
       }
+      dashboardView.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
@@ -186,17 +220,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (dashboardSection) dashboardSection.classList.remove("hidden");
     if (logoutBtn) logoutBtn.classList.remove("hidden");
 
-    // Default to dashboard view
+    // Default: land on dashboard (metrics) plus widgets visible at top
     setDashboardSubView("dashboard");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   /**
    * Get Authorization headers for talking to the FastAPI backend.
-   *
-   * Backend expectation:
-   *  - FastAPI's verify_token(request) reads:
-   *        Authorization: Bearer <supabase_jwt_access_token>
    */
   async function getAuthHeaders() {
     const { data, error } = await supabaseClient.auth.getSession();
@@ -249,7 +279,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return { json, res };
   }
 
-  // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
+  // Called whenever auth succeeds (login OR already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
 
@@ -294,8 +324,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.trustcartLogout = logoutUser;
 
   /* =======================================================
-   *  NAV BUTTON HANDLERS (Dashboard / Cart / Sell)
+   *  NAV BUTTON HANDLERS (Home / Marketplace / Dashboard / Cart / Sell)
    * ======================================================= */
+
+  if (navHomeBtn) {
+    navHomeBtn.addEventListener("click", () => {
+      if (!isLoggedIn) {
+        showToast("Log in to access your workspace.", "error");
+        return;
+      }
+      setDashboardSubView("home");
+    });
+  }
+
+  if (navMarketplaceBtn) {
+    navMarketplaceBtn.addEventListener("click", () => {
+      if (!isLoggedIn) {
+        showToast("Log in to access the marketplace.", "error");
+        return;
+      }
+      setDashboardSubView("marketplace");
+    });
+  }
 
   if (navDashboardBtn) {
     navDashboardBtn.addEventListener("click", () => {
@@ -324,6 +374,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
       setDashboardSubView("sell");
+    });
+  }
+
+  // Home widget shortcuts
+  if (homeWidgetLinks && homeWidgetLinks.length > 0) {
+    homeWidgetLinks.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.dataset.view || "dashboard";
+        if (!isLoggedIn) {
+          showToast("Log in to use this section.", "error");
+          return;
+        }
+        setDashboardSubView(view);
+      });
     });
   }
 
