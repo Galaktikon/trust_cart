@@ -1,6 +1,13 @@
 /************************************************************
  * TrustCart - Frontend Logic (Auth + Products + Plaid Link)
  * Authorization: Bearer <supabase_jwt>
+ *
+ * Backend endpoints used:
+ *  - GET  /test
+ *  - POST /create_link_token
+ *  - POST /exchange_public_token
+ *
+ * See per-function JSDoc for expected response shapes.
  ************************************************************/
 
 // Backend for Plaid endpoints, test endpoint, etc.
@@ -102,8 +109,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /**
    * Get Authorization headers for talking to the FastAPI backend.
-   * This matches verify_token(request) which expects:
-   *   Authorization: Bearer <supabase_jwt>
+   *
+   * Backend expectation:
+   *  - FastAPI's verify_token(request) reads:
+   *        Authorization: Bearer <supabase_jwt_access_token>
+   *  - The token is the Supabase access_token for the current session.
    */
   async function getAuthHeaders() {
     const { data, error } = await supabaseClient.auth.getSession();
@@ -121,6 +131,59 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
+  /**
+   * Generic helper to call your FastAPI backend with auth.
+   *
+   * @param {string} endpoint - Path like "/test", "/create_link_token", etc.
+   * @param {Object} [options]
+   * @param {"GET"|"POST"|"PUT"|"DELETE"} [options.method="GET"]
+   * @param {Object|null} [options.body] - Plain JS object to be JSON.stringified.
+   *
+   * @returns {Promise<{ json: any, res: Response }>}
+   *
+   * Backend contract:
+   *  - Must always return JSON on success.
+   *  - On error, this function throws with a message including HTTP status and body text.
+   *
+   * Example for /test (from your FastAPI code):
+   *  {
+   *    "message": "Hello from Python backend!",
+   *    "user": "<user.email>",
+   *    "id": "<user.id>"
+   *  }
+   */
+  async function callBackend(endpoint, { method = "GET", body = null } = {}) {
+    const headers = await getAuthHeaders();
+    const opts = { method, headers };
+
+    if (body != null) {
+      opts.body = JSON.stringify(body);
+    }
+
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, opts);
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (e) {
+      const text = await res.text();
+      throw new Error(
+        `Backend ${endpoint} returned non-JSON. Status ${res.status}. Body: ${text}`
+      );
+    }
+
+    if (!res.ok) {
+      console.error(`Backend error on ${endpoint}:`, res.status, json);
+      throw new Error(
+        `Backend ${endpoint} failed with status ${res.status}: ${
+          json.detail || json.message || JSON.stringify(json)
+        }`
+      );
+    }
+
+    return { json, res };
+  }
+
   // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
@@ -135,21 +198,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       bankSection.classList.remove("hidden");
     }
 
-    // Call backend /test endpoint (for debugging / DB wiring example)
+    // --- Call backend /test endpoint (example of standard call pattern) ---
     try {
-      const headers = await getAuthHeaders();
-      const res = await fetch(`${API_BASE_URL}/test`, {
-        method: "GET",
-        headers,
-      });
+      /**
+       * Expected /test response shape (from FastAPI):
+       * {
+       *   "message": "Hello from Python backend!",
+       *   "user": "<user.email>",
+       *   "id": "<user.id>"
+       * }
+       *
+       * Frontend usage:
+       *  - Log it for debugging
+       *  - Optionally show message in a toast or use user/id to hydrate UI
+       */
+      const { json } = await callBackend("/test", { method: "GET" });
+      console.log("Backend /test response:", JSON.stringify(json, null, 2));
 
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Backend /test error:", res.status, txt);
-      } else {
-        const json = await res.json();
-        console.log("Backend /test response:", JSON.stringify(json, null, 2));
-      }
+      // Example UI usage (optional):
+      // showToast(json.message || "Backend connected", "success");
     } catch (err) {
       console.error("Error calling /test endpoint:", err);
     }
@@ -462,37 +529,69 @@ document.addEventListener("DOMContentLoaded", async () => {
    *  All Plaid calls now also use Authorization: Bearer <jwt>
    * ======================================================= */
 
+  /**
+   * Create a Plaid link_token via backend.
+   *
+   * Endpoint: POST /create_link_token
+   *
+   * Expected backend response shape:
+   *  {
+   *    "link_token": "<PLAID_LINK_TOKEN_STRING>",
+   *    // ...optionally extra fields for logging
+   *  }
+   *
+   * Frontend usage:
+   *  - Uses json.link_token to initialize Plaid Link.
+   */
   async function createLinkToken() {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE_URL}/create_link_token`, {
+    const { json } = await callBackend("/create_link_token", {
       method: "POST",
-      headers,
+      body: {}, // no payload needed currently; auth comes from headers
     });
 
-    if (!res.ok) {
-      const txt = await res.text();
-      console.error("create_link_token failed:", res.status, txt);
-      throw new Error("Unable to create link token");
+    if (!json.link_token) {
+      throw new Error(
+        "Backend /create_link_token did not return link_token in response"
+      );
     }
 
-    const data = await res.json();
-    return data.link_token;
+    return json.link_token;
   }
 
+  /**
+   * Exchange a Plaid public_token via backend.
+   *
+   * Endpoint: POST /exchange_public_token
+   *
+   * Expected backend response shape (recommended):
+   *  {
+   *    "status": "ok",
+   *    "item_id": "<plaid_item_id>",
+   *    "institution": {
+   *        "id": "<institution_id>",
+   *        "name": "<institution_name>"
+   *    }
+   *    // optionally: "account_ids": [...], "last4": "...", etc.
+   *  }
+   *
+   * Frontend usage:
+   *  - Currently only checks for success and shows toast.
+   *  - You could store institution name or last4 in the UI if backend returns it.
+   */
   async function exchangePublicToken(public_token, metadata) {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${API_BASE_URL}/exchange_public_token`, {
+    const { json } = await callBackend("/exchange_public_token", {
       method: "POST",
-      headers,
-      body: JSON.stringify({ public_token, metadata }),
+      body: { public_token, metadata },
     });
 
-    if (!res.ok) {
-      const txt = await res.text();
-      console.error("exchange_public_token failed:", res.status, txt);
-      throw new Error("Error exchanging public token");
+    // Example: ensure success status if your backend returns it
+    if (json.status && json.status !== "ok") {
+      throw new Error(
+        `Backend /exchange_public_token returned non-ok status: ${json.status}`
+      );
     }
-    return await res.json();
+
+    return json;
   }
 
   async function initPlaidLink() {
@@ -518,7 +617,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         onSuccess: async (public_token, metadata) => {
           showToast("Bank linked!", "success");
           try {
-            await exchangePublicToken(public_token, metadata);
+            const result = await exchangePublicToken(public_token, metadata);
+            console.log(
+              "Plaid exchange_public_token result:",
+              JSON.stringify(result, null, 2)
+            );
             showToast("Bank connection saved", "success");
           } catch (err) {
             console.error(err);
@@ -547,4 +650,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // NOTE: Plaid is initialized as part of onAuthSuccess() after login/sign-up.
 });
-
