@@ -459,7 +459,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       var loginBody = { 
-        id: "",
+        id: userFromData.id,
         description: "Store" };
 
       try {
