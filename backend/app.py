@@ -88,6 +88,7 @@ async def verify_token(request: Request):
     if user_resp.user is None:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    print("Verified user:", user_resp.user)
     return user_resp.user
 
 
