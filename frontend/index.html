@@ -16,15 +16,27 @@
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Plaid Link script (for bank connection) -->
+  <!-- Plaid Link script -->
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 
   <!-- Supabase script -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* Hide everything until user logs in */
+    .requires-auth {
+      display: none !important;
+    }
+    nav.navbar-right,
+    .navbar-left {
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
   <!-- ===================== NAVBAR ===================== -->
-  <header class="navbar">
+  <header class="navbar requires-auth" id="authNavbar">
     <div class="navbar-left">
       <span class="logo">TrustCart</span>
     </div>
@@ -45,9 +57,6 @@
     </nav>
   </header>
 
-  <!-- Anchor for "Home" link -->
-  <div id="top"></div>
-
   <!-- ===================== MAIN LAYOUT ===================== -->
   <main class="home-main">
     <!-- ---------- LEFT: HERO / INFO ---------- -->
@@ -55,15 +64,12 @@
       <div class="hero-content">
         <h1>Build transparent, accountable storefronts with TrustCart.</h1>
         <p>
-          TrustCart is a functional e-commerce platform where merchants can launch
-          customizable storefronts, manage products and inventory, and engage directly
-          with customers. Real-time analytics and public reviews bring accountability
-          to every transaction.
+          TrustCart is a functional e-commerce platform where merchants can
+          launch customizable storefronts, manage products, and track sales.
         </p>
 
         <div class="hero-actions">
-          <a href="#products" class="primary-btn">Explore Marketplace</a>
-          <a href="#auth-panel" class="secondary-btn">Login / Sign Up</a>
+          <a href="#auth-panel" class="primary-btn">Login / Sign Up</a>
         </div>
 
         <p class="hero-tagline">
@@ -77,32 +83,19 @@
       <div class="auth-card">
         <h2 class="auth-title">Welcome to TrustCart</h2>
         <p class="auth-subtitle">
-          Create an account to manage your storefront, track sales, and earn trust
-          through transparent reviews.
+          Create an account to manage your storefront, track sales, and unlock full access.
         </p>
 
         <!-- LOGIN FORM -->
         <form id="loginForm">
           <label class="auth-label">
             Email
-            <input
-              type="email"
-              id="loginEmail"
-              class="auth-input"
-              placeholder="you@example.com"
-              required
-            />
+            <input type="email" id="loginEmail" class="auth-input" placeholder="you@example.com" required />
           </label>
 
           <label class="auth-label">
             Password
-            <input
-              type="password"
-              id="loginPassword"
-              class="auth-input"
-              placeholder="••••••••"
-              required
-            />
+            <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required />
           </label>
 
           <button type="submit" class="auth-button">Login</button>
@@ -113,36 +106,21 @@
           <a href="#" id="showRegister" class="auth-link">Create an account</a>
         </p>
 
-        <!-- SIGN UP FORM (HIDDEN BY DEFAULT, JS TOGGLES IT) -->
+        <!-- SIGN UP FORM -->
         <form id="registerForm" class="hidden">
           <label class="auth-label">
             Full Name
-            <input
-              type="text"
-              id="regName"
-              class="auth-input"
-              placeholder="John Doe"
-            />
+            <input type="text" id="regName" class="auth-input" placeholder="John Doe" />
           </label>
 
           <label class="auth-label">
             Email
-            <input
-              type="email"
-              id="regEmail"
-              class="auth-input"
-              placeholder="you@example.com"
-            />
+            <input type="email" id="regEmail" class="auth-input" placeholder="you@example.com" />
           </label>
 
           <label class="auth-label">
             Password
-            <input
-              type="password"
-              id="regPassword"
-              class="auth-input"
-              placeholder="Create a password"
-            />
+            <input type="password" id="regPassword" class="auth-input" placeholder="Create a password" />
           </label>
 
           <button type="submit" class="auth-button alt">Sign Up</button>
@@ -156,146 +134,37 @@
     </aside>
   </main>
 
-  <!-- ===================== CART SECTION ===================== -->
-  <section class="products-section" id="cart">
+  <!-- ===================== ALL BELOW IS HIDDEN UNTIL LOGIN ===================== -->
+
+  <section class="products-section requires-auth" id="cart">
     <h2>Your Cart</h2>
-    <p style="max-width: 520px; color: #9ca3af; font-size: 14px;">
-      Review and manage the items in your TrustCart shopping cart. In later
-      versions, this will connect directly to multiple payment gateways
-      (Stripe, PayPal, and crypto wallets).
-    </p>
-
-    <div id="cart-items" class="cart-container">
-      <!-- Cart items will be displayed dynamically in future iterations -->
-      <p style="color:#555;">Your cart is currently empty.</p>
-    </div>
+    <p>Your cart is currently empty.</p>
   </section>
 
-  <!-- ===================== MERCHANT DASHBOARD ===================== -->
-  <section class="dashboard-section" id="dashboard">
+  <section class="dashboard-section requires-auth" id="dashboard">
     <h2>Merchant Dashboard</h2>
-    <p class="section-subtitle">
-      Track your inventory, monitor performance, and keep buyers informed with
-      transparent, verifiable data.
-    </p>
-
-    <!-- Analytics cards -->
     <div class="stats-grid" id="analyticsStats">
-      <div class="stat-card">
-        <span class="stat-label">Products Listed</span>
-        <span class="stat-value" id="statTotalProducts">0</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Inventory Value</span>
-        <span class="stat-value" id="statTotalValue">$0.00</span>
-        <span class="stat-note">Based on your listed prices</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Orders (Demo)</span>
-        <span class="stat-value" id="statTotalOrders">0</span>
-        <span class="stat-note">Real-time sales analytics coming soon</span>
-      </div>
-    </div>
-
-    <!-- Storefront overview -->
-    <div class="storefront-grid">
-      <div class="storefront-card">
-        <h3>Your Storefront</h3>
-        <p>
-          Future versions of TrustCart will let you fully customize your storefront:
-          themes, branding, and layout that reflect your business identity—while
-          keeping pricing and reviews transparent on-chain or via auditable logs.
-        </p>
-        <p class="coming-soon-badge">Custom storefronts – coming soon</p>
-      </div>
-
-      <div class="storefront-card">
-        <h3>Your Products</h3>
-        <p>
-          Below is a snapshot of the items you’ve listed through TrustCart.
-          Inventory and status are driven by live data from Supabase.
-        </p>
-        <ul id="merchantProducts" class="merchant-products-list">
-          <li class="muted">
-            Log in and upload items to see them appear here in real time.
-          </li>
-        </ul>
-      </div>
+      <div class="stat-card"><span class="stat-label">Products Listed</span><span class="stat-value" id="statTotalProducts">0</span></div>
+      <div class="stat-card"><span class="stat-label">Inventory Value</span><span class="stat-value" id="statTotalValue">$0.00</span></div>
+      <div class="stat-card"><span class="stat-label">Orders</span><span class="stat-value" id="statTotalOrders">0</span></div>
     </div>
   </section>
 
-  <!-- ===================== BANK / PAYOUT ACCOUNTS (PLAID) ===================== -->
-  <section class="products-section hidden" id="bank">
+  <section class="products-section requires-auth" id="bank">
     <h2>Connect Your Bank (Plaid)</h2>
-    <p style="max-width: 520px; color: #9ca3af; font-size: 14px;">
-      After you sign up and log in, you can securely connect a bank account via
-      Plaid. Future versions will sit alongside Stripe, PayPal, and crypto-native
-      payment flows.
-    </p>
-
-    <button id="link-bank-btn" class="primary-btn" style="margin-top: 12px;">
-      Connect bank or card
-    </button>
+    <button id="link-bank-btn" class="primary-btn">Connect Bank or Card</button>
   </section>
 
-  <!-- ===================== MARKETPLACE / PRODUCTS ===================== -->
-  <section class="products-section" id="products">
+  <section class="products-section requires-auth" id="products">
     <h2>Featured Marketplace Items</h2>
-    <p class="section-subtitle">
-      A mix of demo products and user-listed items. In production, this grid
-      would refresh in real time based on merchant inventory.
-    </p>
-
     <div class="product-grid" id="productGrid">
-      <!-- Static demo items; dynamic items loaded via script.js -->
-      <div class="product-card">
-        <img
-          src="https://via.placeholder.com/400x250?text=Wireless+Earbuds"
-          class="product-image"
-          alt="Wireless Earbuds Pro"
-        />
-        <h3>Wireless Earbuds Pro</h3>
-        <p class="product-price">$89.99</p>
-        <button class="product-button">Add to Cart</button>
-      </div>
-
-      <div class="product-card">
-        <img
-          src="https://via.placeholder.com/400x250?text=Smart+Watch"
-          class="product-image"
-          alt="Smart Watch Series X"
-        />
-        <h3>Smart Watch Series X</h3>
-        <p class="product-price">$149.99</p>
-        <button class="product-button">Add to Cart</button>
-      </div>
-
-      <div class="product-card">
-        <img
-          src="https://via.placeholder.com/400x250?text=Bluetooth+Speaker"
-          class="product-image"
-          alt="Portable Bluetooth Speaker"
-        />
-        <h3>Portable Bluetooth Speaker</h3>
-        <p class="product-price">$49.99</p>
-        <button class="product-button">Add to Cart</button>
-      </div>
+      <!-- sample items -->
     </div>
   </section>
 
-  <!-- ===================== SELL / UPLOAD ITEM ===================== -->
-  <section class="products-section" id="sell">
+  <section class="products-section requires-auth" id="sell">
     <h2>List an Item for Sale</h2>
-    <p class="section-subtitle">
-      Merchants can upload products, attach images, and manage inventory directly
-      from the browser. This prototype uses Supabase for storage and data.
-    </p>
-
-    <form
-      id="uploadItemForm"
-      enctype="multipart/form-data"
-      style="max-width: 420px; margin-top: 16px;"
-    >
+    <form id="uploadItemForm" enctype="multipart/form-data" style="max-width: 420px;">
       <label class="auth-label">
         Product Title
         <input type="text" id="itemTitle" class="auth-input" required />
@@ -303,86 +172,46 @@
 
       <label class="auth-label">
         Price (USD)
-        <input
-          type="number"
-          id="itemPrice"
-          class="auth-input"
-          step="0.01"
-          min="0"
-          required
-        />
+        <input type="number" id="itemPrice" class="auth-input" step="0.01" min="0" required />
       </label>
 
       <label class="auth-label">
         Description
-        <textarea
-          id="itemDescription"
-          class="auth-input"
-          rows="3"
-          style="resize: vertical;"
-        ></textarea>
+        <textarea id="itemDescription" class="auth-input" rows="3"></textarea>
       </label>
 
       <label class="auth-label">
         Product Image
-        <input
-          type="file"
-          id="itemImage"
-          class="auth-input"
-          accept="image/*"
-          required
-        />
+        <input type="file" id="itemImage" class="auth-input" accept="image/*" required />
       </label>
 
-      <button type="submit" class="auth-button" style="margin-top: 14px;">
-        Upload Item
-      </button>
+      <button type="submit" class="auth-button" style="margin-top: 14px;">Upload Item</button>
     </form>
   </section>
 
-  <!-- ===================== REVIEWS / TRANSPARENCY ===================== -->
-  <section class="products-section" id="reviews">
+  <section class="products-section requires-auth" id="reviews">
     <h2>Buyer Reviews & Transparency</h2>
-    <p class="section-subtitle">
-      TrustCart’s review layer is designed to be tamper-resistant and auditable.
-      This prototype shows how reviews might look; future versions can store
-      them on-chain or in append-only logs that everyone can verify.
-    </p>
-
-    <div class="reviews-list" id="reviewsList">
-      <article class="review-card">
-        <header class="review-header">
-          <span class="review-author">0xA1F3...C9</span>
-          <span class="review-rating">★★★★★</span>
-        </header>
-        <p class="review-text">
-          Order arrived on time and exactly as described. Pricing history and
-          public reviews made it easy to trust this seller.
-        </p>
-        <p class="review-meta">Verified buyer · Public review</p>
-      </article>
-
-      <article class="review-card">
-        <header class="review-header">
-          <span class="review-author">0x9B7D...42</span>
-          <span class="review-rating">★★★★☆</span>
-        </header>
-        <p class="review-text">
-          Great quality. I’d like to see more analytics on shipping times, but
-          the transparent feedback system is a huge plus.
-        </p>
-        <p class="review-meta">Verified buyer · Public review</p>
-      </article>
+    <div class="reviews-list">
+      <!-- demo reviews -->
     </div>
   </section>
 
-  <!-- ===================== FOOTER ===================== -->
-  <footer class="footer">
-    © 2025 TrustCart · Demonstrating that decentralized, transparent commerce
-    can compete with traditional platforms in usability, scalability, and reliability.
+  <footer class="footer requires-auth">
+    © 2025 TrustCart · Transparent decentralized commerce
   </footer>
 
-  <!-- Main JS -->
+  <!-- ===================== SCRIPT ===================== -->
   <script src="script.js"></script>
+
+  <script>
+    /* JS function you must call after supabase login */
+    function showAuthenticatedUI() {
+      document.querySelectorAll(".requires-auth").forEach(el => el.style.display = "block");
+      document.querySelector(".navbar-left").style.display = "block";
+      document.querySelector(".navbar-right").style.display = "flex";
+      document.getElementById("auth-panel").style.display = "none";
+    }
+  </script>
+
 </body>
 </html>
