@@ -408,8 +408,8 @@
       TRUSTCART<span class="badge">BETA</span>
     </div>
     <nav class="top-nav">
-      <button class="nav-pill active" type="button">Home</button>
-      <button class="nav-pill faded" type="button">Marketplace</button>
+      <button id="navHomeBtn" class="nav-pill active" type="button">Home</button>
+      <button id="navMarketplaceBtn" class="nav-pill faded" type="button">Marketplace</button>
       <button class="nav-pill faded" type="button">Dashboard</button>
       <button class="nav-pill faded" type="button">Cart</button>
       <button class="nav-pill faded" type="button">Sell</button>
@@ -531,127 +531,170 @@
     <!-- ===========================
          DASHBOARD (AFTER LOGIN)
          Hidden until Supabase says user is logged in
-         This matches the yellow TrustCart screenshot but WITHOUT login card.
     ============================ -->
     <div id="dashboard" class="hidden">
-      <!-- HERO + METRICS -->
-      <div class="dashboard-hero">
-        <div class="dashboard-hero-main">
-          <h1 class="dashboard-hero-title">Merchant Dashboard</h1>
-          <p class="dashboard-hero-sub">
-            Track your inventory, monitor performance, and keep buyers informed with transparent,
-            verifiable data powered by TrustCart and Supabase.
-          </p>
 
-          <div class="metrics-row">
-            <div class="metric-card">
-              <div class="metric-label">Products Listed</div>
-              <div id="statTotalProducts" class="metric-value">0</div>
-              <div class="metric-caption">
-                Number of items you’ve listed for sale.
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-label">Inventory Value</div>
-              <div id="statTotalValue" class="metric-value">$0.00</div>
-              <div class="metric-caption">
-                Based on your current listed prices.
-              </div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-label">Orders (Demo)</div>
-              <div id="statTotalOrders" class="metric-value">0</div>
-              <div class="metric-caption">
-                Real-time sales analytics coming soon.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dashboard-hero-side">
-          <div class="section-title">Your Storefront</div>
-          <h2 class="section-heading">Custom storefronts (coming soon)</h2>
-          <p class="section-body">
-            Future versions of TrustCart will let you fully customize your storefront: themes,
-            branding, and layout that reflect your business identity — while keeping pricing and
-            reviews transparent on-chain or via auditable logs.
-          </p>
-        </div>
-      </div>
-
-      <!-- PRODUCTS + BANK / UPLOAD -->
-      <div class="two-col-layout mt-4">
-        <!-- Your Products (Supabase-driven) -->
-        <div class="card">
-          <div class="section-title">Your Products</div>
-          <h2 class="section-heading">Listed inventory</h2>
-          <p class="section-body">
-            Below is a snapshot of the items you’ve listed through TrustCart. Data is loaded directly
-            from your Supabase <code>products</code> table.
-          </p>
-
-          <ul id="merchantProducts" class="product-listing mt-3">
-            <li class="muted">Could not load products.</li>
-          </ul>
-        </div>
-
-        <!-- Bank connection + upload form -->
-        <div class="card">
-          <div class="section-title">Payouts & Listings</div>
-          <h2 class="section-heading">Connect your bank & list items</h2>
-
-          <!-- Bank / Plaid section (script.js uses #bank and #link-bank-btn) -->
-          <div id="bank" class="mt-2">
-            <p class="section-body">
-              Link a bank account via Plaid so TrustCart can route payouts from your future orders.
+      <!-- ===== HOME VIEW (Merchant Dashboard) ===== -->
+      <div id="dashboardHome">
+        <!-- HERO + METRICS -->
+        <div class="dashboard-hero">
+          <div class="dashboard-hero-main">
+            <h1 class="dashboard-hero-title">Merchant Dashboard</h1>
+            <p class="dashboard-hero-sub">
+              Track your inventory, monitor performance, and keep buyers informed with transparent,
+              verifiable data powered by TrustCart and Supabase.
             </p>
-            <button id="link-bank-btn" class="btn btn-primary mt-3" type="button">
-              Connect bank or card
-            </button>
+
+            <div class="metrics-row">
+              <div class="metric-card">
+                <div class="metric-label">Products Listed</div>
+                <div id="statTotalProducts" class="metric-value">0</div>
+                <div class="metric-caption">
+                  Number of items you’ve listed for sale.
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">Inventory Value</div>
+                <div id="statTotalValue" class="metric-value">$0.00</div>
+                <div class="metric-caption">
+                  Based on your current listed prices.
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">Orders (Demo)</div>
+                <div id="statTotalOrders" class="metric-value">0</div>
+                <div class="metric-caption">
+                  Real-time sales analytics coming soon.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <form id="uploadItemForm" class="mt-4">
-            <div class="field">
-              <label for="itemTitle">Product title</label>
-              <input id="itemTitle" type="text" required />
-            </div>
-
-            <div class="field">
-              <label for="itemPrice">Price (USD)</label>
-              <input id="itemPrice" type="number" step="0.01" min="0" required />
-            </div>
-
-            <div class="field">
-              <label for="itemDescription">Description</label>
-              <textarea id="itemDescription" required></textarea>
-            </div>
-
-            <div class="field">
-              <label for="itemImage">Product image</label>
-              <input id="itemImage" type="file" accept="image/*" required />
-            </div>
-
-            <button type="submit" class="btn btn-primary mt-3">
-              Upload product
-            </button>
-          </form>
+          <div class="dashboard-hero-side">
+            <div class="section-title">Your Storefront</div>
+            <h2 class="section-heading">Custom storefronts (coming soon)</h2>
+            <p class="section-body">
+              Future versions of TrustCart will let you fully customize your storefront: themes,
+              branding, and layout that reflect your business identity — while keeping pricing and
+              reviews transparent on-chain or via auditable logs.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- CART SECTION (read-only for now) -->
-      <div class="cart-card mt-6">
-        <h2 class="cart-title">Your Cart</h2>
-        <p class="cart-body">
-          Review and manage the items in your TrustCart shopping cart. In later versions,
-          this will connect directly to multiple payment gateways (Stripe, PayPal, and crypto wallets).
-        </p>
-        <p class="muted mt-2">
-          Your cart is currently empty.
-        </p>
-      </div>
-    </div>
+        <!-- PRODUCTS + BANK / UPLOAD -->
+        <div class="two-col-layout mt-4">
+          <!-- Your Products (Supabase-driven) -->
+          <div class="card">
+            <div class="section-title">Your Products</div>
+            <h2 class="section-heading">Listed inventory</h2>
+            <p class="section-body">
+              Below is a snapshot of the items you’ve listed through TrustCart. Data is loaded directly
+              from your Supabase <code>products</code> table.
+            </p>
+
+            <ul id="merchantProducts" class="product-listing mt-3">
+              <li class="muted">Could not load products.</li>
+            </ul>
+          </div>
+
+          <!-- Bank connection + upload form -->
+          <div class="card">
+            <div class="section-title">Payouts & Listings</div>
+            <h2 class="section-heading">Connect your bank & list items</h2>
+
+            <!-- Bank / Plaid section (script.js uses #bank and #link-bank-btn) -->
+            <div id="bank" class="mt-2">
+              <p class="section-body">
+                Link a bank account via Plaid so TrustCart can route payouts from your future orders.
+              </p>
+              <button id="link-bank-btn" class="btn btn-primary mt-3" type="button">
+                Connect bank or card
+              </button>
+            </div>
+
+            <form id="uploadItemForm" class="mt-4">
+              <div class="field">
+                <label for="itemTitle">Product title</label>
+                <input id="itemTitle" type="text" required />
+              </div>
+
+              <div class="field">
+                <label for="itemPrice">Price (USD)</label>
+                <input id="itemPrice" type="number" step="0.01" min="0" required />
+              </div>
+
+              <div class="field">
+                <label for="itemDescription">Description</label>
+                <textarea id="itemDescription" required></textarea>
+              </div>
+
+              <div class="field">
+                <label for="itemImage">Product image</label>
+                <input id="itemImage" type="file" accept="image/*" required />
+              </div>
+
+              <button type="submit" class="btn btn-primary mt-3">
+                Upload product
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- CART SECTION (read-only for now) -->
+        <div class="cart-card mt-6">
+          <h2 class="cart-title">Your Cart</h2>
+          <p class="cart-body">
+            Review and manage the items in your TrustCart shopping cart. In later versions,
+            this will connect directly to multiple payment gateways (Stripe, PayPal, and crypto wallets).
+          </p>
+          <p class="muted mt-2">
+            Your cart is currently empty.
+          </p>
+        </div>
+      </div><!-- /#dashboardHome -->
+
+      <!-- ===== MARKETPLACE VIEW (tab switch) ===== -->
+      <div id="dashboardMarketplace" class="hidden">
+        <div class="dashboard-hero-main" style="margin-top: 32px;">
+          <h1 class="dashboard-hero-title">Marketplace</h1>
+          <p class="dashboard-hero-sub">
+            Browse featured TrustCart listings. Future versions will pull live products from Supabase
+            and let buyers filter by category, price, and trust score.
+          </p>
+
+          <div class="two-col-layout mt-4">
+            <div class="card">
+              <div class="section-title">Featured items</div>
+              <ul class="product-listing mt-3">
+                <li>
+                  TrustCart Hoodie — $39.99
+                  <button class="btn btn-outline product-button">Add to cart</button>
+                </li>
+                <li>
+                  Smart Escrow Wallet — $129.00
+                  <button class="btn btn-outline product-button">Add to cart</button>
+                </li>
+                <li>
+                  Verified Merchant Badge — $9.99/month
+                  <button class="btn btn-outline product-button">Add to cart</button>
+                </li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <div class="section-title">How the marketplace works</div>
+              <p class="section-body">
+                The Marketplace showcases merchant listings across TrustCart. As the platform grows,
+                these tiles will be populated from your <code>products</code> table and surfaced to buyers
+                with search, filters, and trust indicators.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div><!-- /#dashboardMarketplace -->
+    </div><!-- /#dashboard -->
   </main>
 
   <!-- ============ Scripts ============ -->
@@ -662,7 +705,7 @@
   <!-- Plaid Link -->
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 
-  <!-- Your frontend logic (the updated script.js that uses #authSection and #dashboard) -->
+  <!-- Your frontend logic -->
   <script src="script.js"></script>
 </body>
 </html>
