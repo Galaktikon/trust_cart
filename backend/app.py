@@ -15,8 +15,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*"  # TODO: in production, replace "*" with your real frontend origin(s)
-        # e.g. "https://trustcart.onrender.com"
+        "*" 
+        # e.g. "https://trust-cart-backend.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
@@ -35,8 +35,8 @@ app.add_middleware(
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # optional, for secure DB writes
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")  # not used directly here but required by Supabase
+SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise RuntimeError("SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables")
@@ -89,6 +89,39 @@ async def verify_token(request: Request):
 
     return user_resp.user
 
+
+# ============================================================
+# Supabase helper functions
+# ============================================================
+
+async def create_user(body: dict):
+    name = body.get("name")
+    email = body.get("email")
+    password = body.get("password")
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    try:
+        new_user = (
+            supabase
+                .table("users")
+                .insert({
+                    "id": user.id,
+                    "role": "customer",
+                    "display_name": name,
+                })
+                .execute()
+        )
+    except Exception as e:
+        print("Error creating user:", e)
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    if user_resp.user is None:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    return new_user
+
 # ============================================================
 # Pydantic models for request bodies
 # ============================================================
@@ -106,29 +139,70 @@ async def root():
     return {"status": "ok", "service": "trustcart-backend"}
 
 # ============================================================
-# /test endpoint - used by frontend after login
+# /endpoints
 # ============================================================
 
-@app.get("/test")
-async def test(request: Request):
-    """
-    Called by frontend onAuthSuccess() via callBackend("/test").
-
-    Frontend expectation (see script.js JSDoc):
-
-        Expected /test response shape:
-        {
-          "message": "Hello from Python backend!",
-          "user": "<user.email>",
-          "id": "<user.id>"
-        }
-
-    This endpoint:
-      - Verifies the Supabase JWT from Authorization header
-      - Returns basic info for logging / optional UI usage
-    """
+@app.post("/register")
+async def register(request: Request):
+    # create a new user in the database
     user = await verify_token(request)
-    print(f"/test - authenticated user: {user}")
+    body = await request.json()
+
+    new_user = create_user(body)
+
+    return {
+        "message": "Hello from Python backend!",
+        "user": new_user,
+    }
+
+@app.get("/login")
+async def login(request: Request):
+    # create a new store in the database
+    user = await verify_token(request)
+    body = await request.json()
+
+    new_user = create_user(body)
+
+    return {
+        "message": "Hello from Python backend!",
+        "user": new_user,
+    }
+
+@app.get("/create_item")
+async def create_item(request: Request):
+    # create a new item in the database
+
+    user = await verify_token(request)
+
+
+
+    return {
+        "message": "Hello from Python backend!",
+        "user": user.email,
+        "id": user.id,
+    }
+
+@app.get("/add_to_cart")
+async def add_to_cart(request: Request):
+    # add an item to the user's cart
+
+    user = await verify_token(request)
+
+
+
+    return {
+        "message": "Hello from Python backend!",
+        "user": user.email,
+        "id": user.id,
+    }
+
+@app.get("/retrieve_store_info")
+async def retrieve_store_info(request: Request):
+    # gather store information from the database
+
+    user = await verify_token(request)
+
+
 
     return {
         "message": "Hello from Python backend!",
