@@ -137,6 +137,8 @@ async def create_store(body: dict):
                 .execute()
                 )
 
+        print(name)
+
         new_store = (
             supabase
                 .table("stores")
