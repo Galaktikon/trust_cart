@@ -9,3 +9,4 @@ python-dotenv
 httpx
 PyJWT
 requests
+json
