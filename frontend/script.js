@@ -249,6 +249,10 @@ document.addEventListener("DOMContentLoaded", async () => {
    */
   async function callBackend(endpoint, { method = "GET", body = null } = {}) {
     const headers = await getAuthHeaders();
+
+    if (body != null) {
+      headers["Content-Type"] = "application/json";
+    }
     const opts = { method, headers };
 
     if (body != null) {
