@@ -517,7 +517,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         await onAuthSuccess(signupData.session.user);
       }
 
-      var registerBody = {
+      const { data, error } = await supabase
+        .from("users")
+        .insert({
+          id: user.id,
+          role: "customer",
+          display_name: name
+        });
+
+      if (error) {
+        console.error("Error inserting user:", error);
+      } else {
+        console.log("Inserted user:", data);
+      }
+
+      /*var registerBody = {
         name: name,
         email: email,
         password: password
@@ -528,7 +542,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Backend /register response:", JSON.stringify(json, null, 2));
       } catch (err) {
         console.error("Error calling /register endpoint:", err);
-      }
+      }*/
 
       registerForm.reset();
       registerForm.classList.add("hidden");
