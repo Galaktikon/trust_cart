@@ -503,6 +503,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       showToast("Account created! Check your email to verify.", "success");
+      console.log("Sign-up data:", signupData);
 
       // If Supabase auto-logs in (depends on your auth settings), call onAuthSuccess
       if (signupData?.session?.user) {
