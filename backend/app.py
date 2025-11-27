@@ -124,6 +124,7 @@ async def create_user(body: dict):
     return new_user
 
 async def create_store(body: dict):
+    print(body)
     user_id = body.get("id")
     description = body.get("description")
 
