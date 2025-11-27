@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 import os
 import requests
+import json
 
 # ============================================================
 # FastAPI app setup
@@ -196,6 +197,9 @@ async def login(request: Request):
     # create a new store in the database
     user = await verify_token(request)
     body = await request.json()
+
+    if isinstance(body, str):
+        body = json.loads(body)
 
     new_store = await create_store(body)
 
