@@ -1,9 +1,13 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from supabase import create_client, Client
-import jwt
-from jwt import PyJWTError
 import os
+import requests
+
+# ============================================================
+# FastAPI app setup
+# ============================================================
 
 app = FastAPI()
 
@@ -11,7 +15,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "*"
+        "*"  # TODO: in production, replace "*" with your real frontend origin(s)
+        # e.g. "https://trustcart.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
@@ -20,94 +25,278 @@ app.add_middleware(
         "Content-Type",
         "Accept",
         "Origin",
-        "X-Requested-With"
+        "X-Requested-With",
     ],
 )
 
-# --- SUPABASE CLIENT ---
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+# ============================================================
+# Supabase configuration
+# ============================================================
 
-JWT_ALGO = "HS256"
-JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_SERVICE_ROLE = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # optional, for secure DB writes
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")  # not used directly here but required by Supabase
+
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    raise RuntimeError("SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+# ============================================================
+# Plaid configuration (optional; app will still run without it)
+# ============================================================
 
-# --- VERIFY TOKEN ---
+PLAID_CLIENT_ID = os.getenv("PLAID_CLIENT_ID")
+PLAID_SECRET = os.getenv("PLAID_SECRET")
+PLAID_ENV = os.getenv("PLAID_ENV", "sandbox").lower()  # "sandbox", "development", "production"
+
+PLAID_BASE_URL_MAP = {
+    "sandbox": "https://sandbox.plaid.com",
+    "development": "https://development.plaid.com",
+    "production": "https://production.plaid.com",
+}
+PLAID_BASE_URL = PLAID_BASE_URL_MAP.get(PLAID_ENV, "https://sandbox.plaid.com")
+
+# ============================================================
+# Auth helper - verify Supabase JWT from frontend
+# ============================================================
+
 async def verify_token(request: Request):
+    """
+    Reads the Supabase JWT access token from the Authorization header:
+        Authorization: Bearer <token>
+
+    Uses Supabase Python client to validate the token and return the user object.
+
+    This matches the frontend getAuthHeaders() in script.js, which sends:
+        Authorization: Bearer <session.access_token>
+    """
     auth = request.headers.get("Authorization")
     if not auth or not auth.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="Missing auth token")
-    token = auth.split(" ", 1)[1]
 
-    user_resp = supabase.auth.get_user(token)
-    if user_resp.user is None:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user_resp.user
-
-
-# --- TEST ENDPOINT ---
-@app.get("/test")
-async def test(request: Request):
-    user = await verify_token(request)
-    print(f"Authenticated user: {user}")
-    # Example DB query
-    #data = supabase.table("users").select("*").eq("email", user["sub"]).execute()
+    token = auth.split(" ", 1)[1].strip()
 
     try:
-        # Insert the row
-        insert_result = (
-            supabase
-                .table("users")
-                .insert({
-                    "id": user.id,
-                    "role": "admin",
-                    "display_name": "Josiah James",
-                })
-                .execute()
-        )
-
-        # Fetch the just-inserted row
-        user_row = (
-            supabase
-                .table("users")
-                .select("*")
-                .eq("id", user.id)
-                .execute()
-        )
-
-        print(user_row.data)
-
-        response = (
-            supabase
-                .table("users")
-                .update({
-                    "role": "customer",
-                    "display_name": "JJ"
-                })
-                .eq("id", user.id)
-                .execute()
-        )
-
-        response = (
-            supabase
-                .table("users")
-                .delete()
-                .eq("id", user.id)
-                .execute()
-        )
-
-        print(response.data)
-
+        user_resp = supabase.auth.get_user(token)
     except Exception as e:
-        print(f"Error inserting user: {e}")
+        print("Error calling supabase.auth.get_user:", e)
+        raise HTTPException(status_code=401, detail="Invalid token")
 
+    if user_resp.user is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    return user_resp.user
+
+# ============================================================
+# Pydantic models for request bodies
+# ============================================================
+
+class ExchangePublicTokenRequest(BaseModel):
+    public_token: str
+    metadata: dict | None = None
+
+# ============================================================
+# Health / root endpoint (optional, nice for debugging)
+# ============================================================
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "trustcart-backend"}
+
+# ============================================================
+# /test endpoint - used by frontend after login
+# ============================================================
+
+@app.get("/test")
+async def test(request: Request):
+    """
+    Called by frontend onAuthSuccess() via callBackend("/test").
+
+    Frontend expectation (see script.js JSDoc):
+
+        Expected /test response shape:
+        {
+          "message": "Hello from Python backend!",
+          "user": "<user.email>",
+          "id": "<user.id>"
+        }
+
+    This endpoint:
+      - Verifies the Supabase JWT from Authorization header
+      - Returns basic info for logging / optional UI usage
+    """
+    user = await verify_token(request)
+    print(f"/test - authenticated user: {user}")
 
     return {
         "message": "Hello from Python backend!",
         "user": user.email,
         "id": user.id,
-        #"db_data": data.data,
+    }
+
+# ============================================================
+# /create_link_token - Plaid Link token creation
+# ============================================================
+
+@app.post("/create_link_token")
+async def create_link_token(request: Request):
+    """
+    Called by frontend createLinkToken() via:
+
+        callBackend("/create_link_token", { method: "POST", body: {} })
+
+    Expected backend response shape (per script.js JSDoc):
+
+        {
+          "link_token": "<PLAID_LINK_TOKEN_STRING>",
+          // ...optionally extra fields for logging
+        }
+
+    If PLAID_CLIENT_ID / PLAID_SECRET are not set, we return a stub
+    link_token so the Plaid Link UI flow can still be demoed.
+    """
+    user = await verify_token(request)
+    print(f"/create_link_token - authenticated user: {user.id}")
+
+    # No Plaid config? Return stub for demo.
+    if not PLAID_CLIENT_ID or not PLAID_SECRET:
+        print("PLAID_CLIENT_ID or PLAID_SECRET not set. Returning stub link_token.")
+        return {"link_token": "link-sandbox-stub-token-123"}
+
+    payload = {
+        "client_id": PLAID_CLIENT_ID,
+        "secret": PLAID_SECRET,
+        "client_name": "TrustCart",
+        "language": "en",
+        "country_codes": ["US"],
+        "user": {
+            "client_user_id": user.id,
+        },
+        "products": ["auth"],  # you can add more products like "transactions" later
+    }
+
+    resp = requests.post(f"{PLAID_BASE_URL}/link/token/create", json=payload)
+    if not resp.ok:
+        print("Plaid /link/token/create error:", resp.status_code, resp.text)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create Plaid link_token",
+        )
+
+    plaid_data = resp.json()
+    link_token = plaid_data.get("link_token")
+
+    if not link_token:
+        raise HTTPException(
+            status_code=500,
+            detail="Plaid did not return link_token",
+        )
+
+    return {"link_token": link_token}
+
+# ============================================================
+# /exchange_public_token - Plaid public_token exchange
+# ============================================================
+
+@app.post("/exchange_public_token")
+async def exchange_public_token(
+    request: Request,
+    body: ExchangePublicTokenRequest,
+):
+    """
+    Called by frontend exchangePublicToken(public_token, metadata) via:
+
+        callBackend("/exchange_public_token", {
+          method: "POST",
+          body: { public_token, metadata }
+        })
+
+    Expected backend response shape (per script.js JSDoc):
+
+        {
+          "status": "ok",
+          "item_id": "<plaid_item_id>",
+          "institution": {
+              "id": "<institution_id>",
+              "name": "<institution_name>"
+          }
+          // optionally: "account_ids": [...], "last4": "...", etc.
+        }
+
+    Frontend currently:
+      - Checks json.status (if present) is "ok"
+      - Logs the result and shows "Bank connection saved" on success
+    """
+    user = await verify_token(request)
+    print(f"/exchange_public_token - authenticated user: {user.id}")
+
+    # If Plaid is not configured, return a stub success for demo.
+    if not PLAID_CLIENT_ID or not PLAID_SECRET:
+        print("PLAID_CLIENT_ID or PLAID_SECRET not set. Returning stub exchange result.")
+        institution_id = None
+        institution_name = None
+        if body.metadata and isinstance(body.metadata, dict):
+            inst = body.metadata.get("institution") or {}
+            institution_id = inst.get("institution_id")
+            institution_name = inst.get("name")
+
+        return {
+            "status": "ok",
+            "item_id": "item-stub-123",
+            "institution": {
+                "id": institution_id,
+                "name": institution_name,
+            },
+            "user_id": user.id,
+        }
+
+    # Real Plaid call to exchange public_token for access_token
+    exchange_payload = {
+        "client_id": PLAID_CLIENT_ID,
+        "secret": PLAID_SECRET,
+        "public_token": body.public_token,
+    }
+
+    resp = requests.post(
+        f"{PLAID_BASE_URL}/item/public_token/exchange",
+        json=exchange_payload,
+    )
+    if not resp.ok:
+        print("Plaid /item/public_token/exchange error:", resp.status_code, resp.text)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to exchange Plaid public_token",
+        )
+
+    plaid_data = resp.json()
+    access_token = plaid_data.get("access_token")
+    item_id = plaid_data.get("item_id")
+
+    # TODO (recommended): store access_token + item_id securely in DB using service role
+    # Example:
+    # service_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+    # service_client.table("plaid_items").upsert({
+    #     "user_id": user.id,
+    #     "item_id": item_id,
+    #     "access_token": access_token,
+    # }).execute()
+
+    # Try to get institution info from metadata for UI
+    institution_id = None
+    institution_name = None
+    if body.metadata and isinstance(body.metadata, dict):
+        inst = body.metadata.get("institution") or {}
+        institution_id = inst.get("institution_id")
+        institution_name = inst.get("name")
+
+    return {
+        "status": "ok",
+        "item_id": item_id,
+        "institution": {
+            "id": institution_id,
+            "name": institution_name,
+        },
+        "user_id": user.id,
     }
