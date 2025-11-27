@@ -196,7 +196,6 @@ async def login(request: Request):
     # create a new store in the database
     user = await verify_token(request)
     body = await request.json()
-    body['id'] = user.id
 
     new_store = create_store(body)
 
