@@ -513,7 +513,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { data, error } = await supabaseClient
         .from("users")
         .insert({
-          id: signupData.session.user.id,
+          id: signupData.user.id,
           role: "customer",
           display_name: name
         });
@@ -525,6 +525,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       /*var registerBody = {
+        id: signupData.user.id,
         name: name,
         email: email,
         password: password
