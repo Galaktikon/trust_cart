@@ -188,12 +188,13 @@ async def register(request: Request):
         "user": new_user,
     }
 
-@app.get("/login")
+@app.post("/login")
 async def login(request: Request):
     # create a new store in the database
     user = await verify_token(request)
+    body = await request.json()
 
-    new_store = create_store(user)
+    new_store = create_store(body)
 
     return {
         "message": "Hello from Python backend!",
