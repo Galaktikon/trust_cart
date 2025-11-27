@@ -457,6 +457,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         const { data: userData } = await supabaseClient.auth.getUser();
         await onAuthSuccess(userData?.user);
       }
+
+      var loginBody = { 
+        id: data.id,
+        description: "Store" };
+
+      try {
+        const { json } = await callBackend("/login", { method: "POST" , body: JSON.stringify(loginBody) });
+        console.log("Backend /login response:", JSON.stringify(json, null, 2));
+      } catch (err) {
+        console.error("Error calling /login endpoint:", err);
+      }
     });
   }
 
@@ -523,20 +534,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else {
         console.log("Inserted user:", data);
       }
-
-      /*var registerBody = {
-        id: signupData.user.id,
-        name: name,
-        email: email,
-        password: password
-      }
-
-      try {
-        const { json } = await callBackend("/register", { method: "POST" , body: JSON.stringify(registerBody) });
-        console.log("Backend /register response:", JSON.stringify(json, null, 2));
-      } catch (err) {
-        console.error("Error calling /register endpoint:", err);
-      }*/
 
       registerForm.reset();
       registerForm.classList.add("hidden");

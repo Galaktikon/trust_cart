@@ -122,6 +122,40 @@ async def create_user(body: dict):
 
     return new_user
 
+async def create_store(body: dict):
+    user_id = body.get("id")
+    description = body.get("description")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+    try:
+        name = (
+            supabase
+                .table("users")
+                .select("display_name")
+                .eq("id", user_id)
+                .execute()
+                )
+
+            new_store = (
+                supabase
+                    .table("stores")
+                    .insert({
+                        "merchant_id": user_id,
+                        "name": name.data[0]['display_name'] + "'s Store",
+                        "description": description,
+                    })
+                    .execute()
+            )
+    except Exception as e:
+        print("Error creating user:", e)
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    if user_resp.user is None:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    return new_store
+
 # ============================================================
 # Pydantic models for request bodies
 # ============================================================
@@ -158,13 +192,12 @@ async def register(request: Request):
 async def login(request: Request):
     # create a new store in the database
     user = await verify_token(request)
-    body = await request.json()
 
-    new_user = create_user(body)
+    new_store = create_store(user)
 
     return {
         "message": "Hello from Python backend!",
-        "user": new_user,
+        "user": new_store,
     }
 
 @app.get("/create_item")
