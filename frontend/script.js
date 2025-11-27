@@ -36,15 +36,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // High-level sections for auth gating
   const authSection = document.getElementById("authSection");
-  const appSection = document.getElementById("appSection");
+  const dashboardSection = document.getElementById("dashboard");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  // Top nav buttons
+  // Nav buttons for sub-views (Dashboard / Cart / Sell)
   const navDashboardBtn = document.getElementById("navDashboardBtn");
   const navCartBtn = document.getElementById("navCartBtn");
   const navSellBtn = document.getElementById("navSellBtn");
 
-  // App views
+  // Sub-view containers inside #dashboard
   const dashboardView = document.getElementById("dashboardView");
   const cartView = document.getElementById("cartView");
   const sellView = document.getElementById("sellView");
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const regPassword = document.getElementById("regPassword");
 
   // Dashboard elements
-  const bankSection = document.getElementById("bank") || sellView; // fallback
+  const bankSection = document.getElementById("bank");
   const linkButton = document.getElementById("link-bank-btn");
 
   const merchantProductsList = document.getElementById("merchantProducts");
@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const itemDescription = document.getElementById("itemDescription");
   const itemImage = document.getElementById("itemImage");
 
-  // Track if user is logged in (for nav protection)
+  // Track login state (for nav protection)
   let isLoggedIn = false;
 
   /* =======================================================
@@ -126,17 +126,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /**
-   * Switch between app views (Dashboard / Cart / Sell)
+   * Switch between Dashboard / Cart / Sell inside #dashboard
    */
-  function setAppView(view) {
-    if (!appSection) return;
+  function setDashboardSubView(view) {
+    if (!dashboardSection) return;
 
-    // Hide all
+    // Hide all sub-views
     if (dashboardView) dashboardView.classList.add("hidden");
     if (cartView) cartView.classList.add("hidden");
     if (sellView) sellView.classList.add("hidden");
 
-    // Reset nav states
+    // Reset nav pills
     [navDashboardBtn, navCartBtn, navSellBtn].forEach((btn) => {
       if (!btn) return;
       btn.classList.remove("active");
@@ -168,32 +168,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   /**
    * Simple UI mode helpers:
    *  - showAuthUI(): only login/register visible
-   *  - showAppUI(): only app (tabs) visible
+   *  - showDashboardUI(): only dashboard visible
    */
   function showAuthUI() {
     isLoggedIn = false;
     if (authSection) authSection.classList.remove("hidden");
-    if (appSection) appSection.classList.add("hidden");
+    if (dashboardSection) dashboardSection.classList.add("hidden");
     if (logoutBtn) logoutBtn.classList.add("hidden");
 
-    // reset nav visuals
-    setAppView("dashboard");
+    // Reset subview state
+    setDashboardSubView("dashboard");
   }
 
-  function showAppUI() {
+  function showDashboardUI() {
     isLoggedIn = true;
     if (authSection) authSection.classList.add("hidden");
-    if (appSection) appSection.classList.remove("hidden");
+    if (dashboardSection) dashboardSection.classList.remove("hidden");
     if (logoutBtn) logoutBtn.classList.remove("hidden");
 
-    // default app view = Dashboard
-    setAppView("dashboard");
-
+    // Default to dashboard view
+    setDashboardSubView("dashboard");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   /**
    * Get Authorization headers for talking to the FastAPI backend.
+   *
+   * Backend expectation:
+   *  - FastAPI's verify_token(request) reads:
+   *        Authorization: Bearer <supabase_jwt_access_token>
    */
   async function getAuthHeaders() {
     const { data, error } = await supabaseClient.auth.getSession();
@@ -246,33 +249,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     return { json, res };
   }
 
-  // Called whenever auth succeeds (login OR existing session OR sign-up with session)
+  // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
 
-    showAppUI();
+    // Switch UI into "dashboard" mode
+    showDashboardUI();
 
     const displayName =
       user.user_metadata?.full_name || user.email || "Merchant";
 
     showToast(`Welcome, ${displayName}`, "success");
 
-    // Show bank section (it's already visible in Sell view)
-    // Initialize Plaid only after login
-    try {
-      if (linkButton && !plaidInitialized) {
-        await initPlaidLink();
-      }
-    } catch (err) {
-      console.error("Error initializing Plaid:", err);
+    // Show the bank / payouts section (Plaid integration)
+    if (bankSection) {
+      bankSection.classList.remove("hidden");
     }
 
-    // Example backend check
+    // Call backend /test endpoint (example)
     try {
       const { json } = await callBackend("/test", { method: "GET" });
       console.log("Backend /test response:", JSON.stringify(json, null, 2));
     } catch (err) {
       console.error("Error calling /test endpoint:", err);
+    }
+
+    // Initialize Plaid (only once)
+    if (linkButton && !plaidInitialized) {
+      await initPlaidLink();
     }
 
     // Load merchant's products + analytics
@@ -299,7 +303,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Log in to access your dashboard.", "error");
         return;
       }
-      setAppView("dashboard");
+      setDashboardSubView("dashboard");
     });
   }
 
@@ -309,7 +313,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Log in to view your cart.", "error");
         return;
       }
-      setAppView("cart");
+      setDashboardSubView("cart");
     });
   }
 
@@ -319,7 +323,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Log in to list products for sale.", "error");
         return;
       }
-      setAppView("sell");
+      setDashboardSubView("sell");
     });
   }
 
@@ -389,6 +393,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Logged in!", "success");
 
+      // Prefer user from response, fall back to getUser()
       const userFromData = data?.user || data?.session?.user;
       if (userFromData) {
         await onAuthSuccess(userFromData);
@@ -400,7 +405,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =======================================================
-   *  REGISTER HANDLER
+   *  REGISTER HANDLER (Sign up → then connect bank)
    * ======================================================= */
 
   if (registerForm) {
@@ -443,6 +448,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Account created! Check your email to verify.", "success");
 
+      // If Supabase auto-logs in (depends on your auth settings), call onAuthSuccess
       if (signupData?.session?.user) {
         await onAuthSuccess(signupData.session.user);
       }
@@ -454,7 +460,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =======================================================
-   *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (demo)
+   *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (prototype)
    * ======================================================= */
 
   const productButtons = document.querySelectorAll(".product-button");
@@ -473,6 +479,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     uploadForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      // 1. Ensure user is logged in
       const { data: userData, error: userErr } =
         await supabaseClient.auth.getUser();
       const user = userData?.user;
@@ -482,6 +489,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
+      // 2. Get form values
       const title = (itemTitle?.value || "").trim();
       const price = parseFloat(itemPrice?.value || "0");
       const description = (itemDescription?.value || "").trim();
@@ -493,6 +501,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       try {
+        // 3. Upload image to Supabase Storage
         const fileExt = file.name.split(".").pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         const filePath = fileName;
@@ -507,6 +516,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
+        // 4. Get public URL for the uploaded image
         const { data: publicData } = supabaseClient.storage
           .from("product-images")
           .getPublicUrl(filePath);
@@ -517,6 +527,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
+        // 5. Insert product row into "products" table
         const { error: insertError } = await supabaseClient
           .from("products")
           .insert({
@@ -536,6 +547,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Item uploaded successfully!", "success");
         uploadForm.reset();
 
+        // Reload merchant products + stats
         await loadUserProducts(user);
       } catch (err) {
         console.error(err);
@@ -570,7 +582,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (!data || data.length === 0) {
         merchantProductsList.innerHTML =
-          '<li class="muted">No products yet. Use the “Sell” tab to add your first item.</li>';
+          '<li class="muted">No products yet. Use “List an Item for Sale” to add your first item.</li>';
       } else {
         merchantProductsList.innerHTML = "";
         let totalValue = 0;
@@ -584,6 +596,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           merchantProductsList.appendChild(li);
         });
 
+        // Update analytics
         if (statTotalProducts) {
           statTotalProducts.textContent = data.length.toString();
         }
@@ -591,6 +604,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           statTotalValue.textContent = `$${totalValue.toFixed(2)}`;
         }
         if (statTotalOrders) {
+          // For now, demo value = 0; future work: compute from orders table
           statTotalOrders.textContent = "0";
         }
       }
@@ -688,4 +702,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       showToast("Could not initialize Plaid", "error");
     }
   }
+
+  // NOTE: Plaid is initialized as part of onAuthSuccess() after login/sign-up.
 });
