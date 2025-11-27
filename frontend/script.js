@@ -1,15 +1,21 @@
 /************************************************************
  * TrustCart - Frontend Logic (Auth + Products + Plaid Link)
+ * Updated to work with FastAPI backend that verifies
+ * Authorization: Bearer <supabase_jwt>
  ************************************************************/
 
-// Backend for Plaid endpoints, etc.
+// Backend for Plaid endpoints, test endpoint, etc.
 const API_BASE_URL = "https://trust-cart-backend.onrender.com";
 
-// Supabase Configuration
+// Supabase Configuration (public anon key is OK in frontend)
 const SUPABASE_URL = "https://semkimaoxlmxtyhlhada.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlbWtpbWFveGxteHR5aGxoYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMjMyNzIsImV4cCI6MjA3ODg5OTI3Mn0.RaOsVMI2UQULkWCYgJGntpNpndaqM1HIi4XHOkJb9kY";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlbWtpbWFveGxteHR5aGxoYWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMjMyNzIsImV4cCI6MjA3ODg5OTI3Mn0.RaOsVMI2UQULkWCYgJGntpNpndaqM1HIi4XHOkJb9kY";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 // Plaid state
 let plaidInitialized = false;
@@ -21,7 +27,7 @@ let plaidHandler = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   /* =======================================================
-   *  AUTH SECTION (Supabase email/password)
+   *  DOM ELEMENTS
    * ======================================================= */
 
   const loginForm = document.getElementById("loginForm");
@@ -50,7 +56,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const itemDescription = document.getElementById("itemDescription");
   const itemImage = document.getElementById("itemImage");
 
-  /* ---------- Helpers ---------- */
+  /* =======================================================
+   *  HELPERS
+   * ======================================================= */
 
   function showToast(message, type = "info") {
     const box = document.createElement("div");
@@ -93,6 +101,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     return pass.length >= 6;
   }
 
+  /**
+   * Get Authorization headers for talking to the FastAPI backend.
+   * This matches verify_token(request) which expects:
+   *   Authorization: Bearer <supabase_jwt>
+   */
+  async function getAuthHeaders() {
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+      throw new Error("Could not get auth session");
+    }
+    const token = data?.session?.access_token;
+    if (!token) {
+      throw new Error("No active auth token; user is not logged in");
+    }
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
@@ -105,6 +134,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Show the bank / payouts section (Plaid integration)
     if (bankSection) {
       bankSection.classList.remove("hidden");
+    }
+
+    // Call backend /test endpoint (for debugging / DB wiring example)
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${API_BASE_URL}/test`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("Backend /test error:", res.status, txt);
+      } else {
+        const json = await res.json();
+        console.log("Backend /test response:", JSON.stringify(json, null, 2));
+      }
+    } catch (err) {
+      console.error("Error calling /test endpoint:", err);
     }
 
     // Initialize Plaid (only once)
@@ -188,21 +236,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       showToast("Logged in!", "success");
 
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const res = await fetch(`${API_BASE_URL}/test`, {
-      headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-      }
-      });
-
-    const json = await res.json();
-    console.log(JSON.stringify(json, null, 2));
-
-      if (data?.user) {
-        await onAuthSuccess(data.user);
-      } else if (data?.session?.user) {
-        await onAuthSuccess(data.session.user);
+      // Prefer user from response, fall back to getUser()
+      const userFromData = data?.user || data?.session?.user;
+      if (userFromData) {
+        await onAuthSuccess(userFromData);
       } else {
         const { data: userData } = await supabaseClient.auth.getUser();
         await onAuthSuccess(userData?.user);
@@ -422,29 +459,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =======================================================
-   * PLAID LINK (Bank connection after signup/login)
+   *  PLAID LINK (Bank connection after signup/login)
+   *  All Plaid calls now also use Authorization: Bearer <jwt>
    * ======================================================= */
 
   async function createLinkToken() {
+    const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE_URL}/create_link_token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
     });
 
-    if (!res.ok) throw new Error("Unable to create link token");
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("create_link_token failed:", res.status, txt);
+      throw new Error("Unable to create link token");
+    }
 
     const data = await res.json();
     return data.link_token;
   }
 
   async function exchangePublicToken(public_token, metadata) {
+    const headers = await getAuthHeaders();
     const res = await fetch(`${API_BASE_URL}/exchange_public_token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ public_token, metadata }),
     });
 
-    if (!res.ok) throw new Error("Error exchanging public token");
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("exchange_public_token failed:", res.status, txt);
+      throw new Error("Error exchanging public token");
+    }
     return await res.json();
   }
 
