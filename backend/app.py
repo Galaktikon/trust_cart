@@ -145,7 +145,6 @@ async def root():
 @app.post("/register")
 async def register(request: Request):
     # create a new user in the database
-    user = await verify_token(request)
     body = await request.json()
 
     new_user = create_user(body)
