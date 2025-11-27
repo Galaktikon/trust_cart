@@ -128,6 +128,7 @@ async def create_store(body: dict):
 
     if not user_id:
         raise HTTPException(status_code=400, detail="User ID is required")
+    print("starting create store")
     try:
         name = (
             supabase
@@ -136,7 +137,7 @@ async def create_store(body: dict):
                 .eq("id", user_id)
                 .execute()
                 )
-
+        print("fetched name:")
         print(name)
 
         new_store = (
@@ -195,6 +196,7 @@ async def login(request: Request):
     # create a new store in the database
     user = await verify_token(request)
     body = await request.json()
+    body['id'] = user.id
 
     new_store = create_store(body)
 
