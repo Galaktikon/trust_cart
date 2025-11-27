@@ -137,16 +137,16 @@ async def create_store(body: dict):
                 .execute()
                 )
 
-            new_store = (
-                supabase
-                    .table("stores")
-                    .insert({
-                        "merchant_id": user_id,
-                        "name": name.data[0]['display_name'] + "'s Store",
-                        "description": description,
-                    })
-                    .execute()
-            )
+        new_store = (
+            supabase
+                .table("stores")
+                .insert({
+                    "merchant_id": user_id,
+                    "name": name.data[0]['display_name'] + "'s Store",
+                    "description": description,
+                })
+                .execute()
+                )
     except Exception as e:
         print("Error creating user:", e)
         raise HTTPException(status_code=500, detail="Failed to create user")
