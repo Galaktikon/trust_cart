@@ -1,6 +1,5 @@
 /************************************************************
  * TrustCart - Frontend Logic (Auth + Products + Plaid Link)
- * Updated to work with FastAPI backend that verifies
  * Authorization: Bearer <supabase_jwt>
  ************************************************************/
 
@@ -548,3 +547,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // NOTE: Plaid is initialized as part of onAuthSuccess() after login/sign-up.
 });
+
