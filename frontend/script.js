@@ -62,6 +62,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const itemDescription = document.getElementById("itemDescription");
   const itemImage = document.getElementById("itemImage");
 
+  // NEW: top-level sections for auth vs dashboard, and logout button
+  const authSection = document.getElementById("authSection");
+  const dashboardSection = document.getElementById("dashboard");
+  const logoutBtn = document.getElementById("logoutBtn");
+
   /* =======================================================
    *  HELPERS
    * ======================================================= */
@@ -184,12 +189,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     return { json, res };
   }
 
+  /**
+   * Show dashboard, hide auth, and show logout button.
+   */
+  function showDashboardUI() {
+    if (authSection) authSection.classList.add("hidden");
+    if (dashboardSection) dashboardSection.classList.remove("hidden");
+    if (logoutBtn) logoutBtn.classList.remove("hidden");
+  }
+
+  /**
+   * Show auth, hide dashboard, and hide logout button.
+   */
+  function showAuthUI() {
+    if (authSection) authSection.classList.remove("hidden");
+    if (dashboardSection) dashboardSection.classList.add("hidden");
+    if (logoutBtn) logoutBtn.classList.add("hidden");
+  }
+
   // Called whenever auth succeeds (login OR user already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
 
     const displayName =
       user.user_metadata?.full_name || user.email || "Merchant";
+
+    // Switch UI to dashboard mode
+    showDashboardUI();
 
     showToast(`Welcome, ${displayName}`, "success");
 
@@ -246,10 +272,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const { data } = await supabaseClient.auth.getUser();
     if (data?.user) {
+      // User is logged in → show dashboard immediately and hydrate
+      showDashboardUI();
       await onAuthSuccess(data.user);
+    } else {
+      // Not logged in → show auth section
+      showAuthUI();
     }
   } catch (err) {
     console.error("Error checking current user:", err);
+    // On error, safest is to show auth
+    showAuthUI();
   }
 
   /* =======================================================
