@@ -161,7 +161,7 @@ async def create_store(body: dict, token: str):
 
     return new_store
 
-async def create_item(body: dict, token: str):
+async def create_db_item(body: dict, token: str):
     user_id = body.get("id")
     title = body.get("title")
     description = body.get("description")
@@ -265,7 +265,7 @@ async def create_item(request: Request):
     if isinstance(body, str):
         body = json.loads(body)
 
-    new_item = await create_item(body, token)
+    new_item = await create_db_item(body, token)
 
     return {
         "message": "Hello from Python backend!",
