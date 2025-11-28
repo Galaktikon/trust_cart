@@ -580,6 +580,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const price = parseFloat(itemPrice?.value || "0");
       const description = (itemDescription?.value || "").trim();
       const file = itemImage?.files?.[0];
+      console.log("Uploading item:", {itemImage});
 
       if (!title || !file || isNaN(price) || price < 0) {
         showToast("Please fill out all required fields correctly", "error");
