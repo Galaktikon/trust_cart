@@ -159,10 +159,52 @@ async def create_store(body: dict, token: str):
         print("Error creating user:", e)
         raise HTTPException(status_code=500, detail="Failed to create user")
 
-    if user_resp.user is None:
-        raise HTTPException(status_code=500, detail="Failed to create user")
-
     return new_store
+
+async def create_item(body: dict, token: str):
+    user_id = body.get("id")
+    title = body.get("title")
+    description = body.get("description")
+    price = body.get("price")
+    file_path = body.get("file_path")
+    file = body.get("file")
+
+    if not title or not price or not user_id:
+        raise HTTPException(status_code=400, detail="Title, price, and user ID are required")
+    try:
+        store = (
+            supabase
+                .table("users")
+                .select("id")
+                .eq("merchant_id", user_id)
+                .execute()
+                )
+
+        supabase.storage.auth(token)
+
+        result = supabase.storage.from_("product-images").upload(file_path, file)
+        image_url = supabase.storage.from_("product-images").get_public_url(file_path)
+
+        supabase.postgrest.auth(token)
+
+        new_item = (
+            supabase
+                .table("items")
+                .insert({
+                    "store_id": store,
+                    "name": title,
+                    "description": description,
+                    "price": price,
+                    "stock": 10,
+                    "image_url": image_url,
+                })
+                .execute()
+                )
+    except Exception as e:
+        print("Error creating item:", e)
+        raise HTTPException(status_code=500, detail="Failed to create item")
+
+    return new_item
 
 # ============================================================
 # Pydantic models for request bodies
@@ -216,15 +258,18 @@ async def login(request: Request):
 @app.get("/create_item")
 async def create_item(request: Request):
     # create a new item in the database
-
     user = await verify_token(request)
+    body = await request.json()
+    token = request.headers.get("Authorization").split(" ", 1)[1].strip()
 
+    if isinstance(body, str):
+        body = json.loads(body)
 
+    new_item = await create_item(body, token)
 
     return {
         "message": "Hello from Python backend!",
-        "user": user.email,
-        "id": user.id,
+        "user": new_item,
     }
 
 @app.get("/add_to_cart")
