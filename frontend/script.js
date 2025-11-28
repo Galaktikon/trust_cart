@@ -699,10 +699,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       var store_items = response.store_items.data
       var cart_items = response.cart_items.data
 
-      all_items.forEach((item) => {
-        console.log("All item:", item);
-      });
-
       let totalValue = 0;
       store_items.forEach((item) => {
         console.log("Store item:", item);
@@ -711,6 +707,42 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       cart_items.forEach((item) => {
         console.log("Cart item:", item);
+      });
+
+      const grid = document.getElementById("market-grid");
+      grid.innerHTML = "";
+
+      all_items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "market-card";
+
+        card.innerHTML = `
+          <div class="market-body">
+            <div class="market-title">${item.name}</div>
+            <div class="market-meta">${item.description}</div>
+            <div class="market-price">$${item.price.toFixed(2)}</div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      grid = document.getElementById("merchantProducts");
+      grid.innerHTML = "";
+
+      all_items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "merchant-card";
+
+        card.innerHTML = `
+          <div class="merchant-body">
+            <div class="merchant-title">${item.name}</div>
+            <div class="merchant-meta">${item.description}</div>
+            <div class="merchant-price">$${item.price.toFixed(2)}</div>
+          </div>
+        `;
+
+        grid.appendChild(card);
       });
 
       // Update analytics
