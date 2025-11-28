@@ -258,7 +258,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const opts = { method, headers };
 
-    if (body != null) {
+    if (body instanceof FormData) {
+      // Remove content-type if getAuthHeaders added it
+      if (opts.headers["Content-Type"]) {
+        delete opts.headers["Content-Type"];
+      }
+      opts.body = body;  // send FormData as-is
+    } else if (body != null) {
+      opts.headers["Content-Type"] = "application/json";
       opts.body = JSON.stringify(body);
     }
 
