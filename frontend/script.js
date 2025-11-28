@@ -683,7 +683,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       var dataBody = { 
         user_id: user.id};
-
+   
+      let json;
+      
       try {
         const { json } = await callBackend("/getUserData", false, { method: "POST" , body: JSON.stringify(dataBody) });
         console.log("Backend /getUserData response:", JSON.stringify(json, null, 2));
