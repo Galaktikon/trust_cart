@@ -166,7 +166,7 @@ async def create_db_item(body: dict, token: str):
     title = body.get("title")
     description = body.get("description")
     price = body.get("price")
-    file_path = body.get("file_path")
+    file_path = body.get("filePath")
     file = body.get("file")
 
     if not title or not price or not user_id:
