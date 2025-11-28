@@ -353,17 +353,17 @@ async def add_cart_item(body: dict, token: str):
                     )
                 print(new_cart_item)
         
-            supabase.postgrest.auth(token)
-            cart_update = (
-                supabase
-                    .table("orders")
-                    .update({
-                        "total_amount": cart.data[0]['total_amount'] + item.data[0]['price'],
-                    })
-                    .eq("id", cart_id)
-                    .execute()
-            )
-            print(cart_update)
+        supabase.postgrest.auth(token)
+        cart_update = (
+            supabase
+                .table("orders")
+                .update({
+                    "total_amount": cart.data[0]['total_amount'] + item.data[0]['price'],
+                })
+                .eq("id", cart_id)
+                .execute()
+        )
+        print("cart updated:", cart.data[0]['total_amount'] + item.data[0]['price'])
     except Exception as e:
         print("Error creating item:", e)
         raise HTTPException(status_code=500, detail="Failed to create item")
@@ -563,6 +563,19 @@ async def add_to_cart(request: Request):
         body = json.loads(body)
 
     new_cart_item = await add_cart_item(body, token)
+
+    return {
+        "message": "Hello from Python backend!",
+        "user": new_cart_item,
+    }
+
+@app.get("/getUserData")
+async def getUserData(request: Request):
+    # gather store information from the database
+    user = await verify_token(request)
+    body = await request.json()
+    token = request.headers.get("Authorization").split(" ", 1)[1].strip()
+
     cart_items = await gather_cart_items(body, token)
     all_items = await gather_all_items(body, token)
     store_items = await gather_store_items(body, token)
@@ -570,25 +583,10 @@ async def add_to_cart(request: Request):
 
     return {
         "message": "Hello from Python backend!",
-        "user": new_cart_item,
         "cart_items": cart_items,
         "all_items": all_items,
         "store_items": store_items,
         "store_info": store_info,
-    }
-
-@app.get("/retrieve_store_info")
-async def retrieve_store_info(request: Request):
-    # gather store information from the database
-
-    user = await verify_token(request)
-
-
-
-    return {
-        "message": "Hello from Python backend!",
-        "user": user.email,
-        "id": user.id,
     }
 
 # ============================================================

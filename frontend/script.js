@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Load merchant's products + analytics
-    await loadUserProducts(user);
+    await loadUserData(user);
   }
 
   async function logoutUser() {
@@ -626,10 +626,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const price = parseFloat(itemPrice?.value || "0");
       const description = (itemDescription?.value || "").trim();
       const file = itemImage?.files?.[0];
-      //check if any values are being retured
-      
-      //update get elementby id here 
-
 
       if (!title || !file || isNaN(price) || price < 0) {
         showToast("Please fill out all required fields correctly", "error");
@@ -646,44 +642,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Description:", description);
         console.log("File:", file);
         console.log("File path:", filePath);
-
-        /*const { error: uploadError } = await supabaseClient.storage
-          .from("product-images")
-          .upload(filePath, file);
-
-        if (uploadError) {
-          console.error(uploadError);
-          showToast("Image upload failed", "error");
-          return;
-        }
-
-        // 4. Get public URL for the uploaded image
-        const { data: publicData } = supabaseClient.storage
-          .from("product-images")
-          .getPublicUrl(filePath);
-
-        const imageUrl = publicData?.publicUrl;
-        if (!imageUrl) {
-          showToast("Could not get image URL", "error");
-          return;
-        }
-
-        // 5. Insert product row into "products" table
-        const { error: insertError } = await supabaseClient
-          .from("products")
-          .insert({
-            title,
-            description,
-            price,
-            image_url: imageUrl,
-            owner_id: user.id,
-          });
-
-        if (insertError) {
-          console.error(insertError);
-          showToast("Error saving product", "error");
-          return;
-        }*/
 
         const formData = new FormData();
         formData.append("user_id", user.id);
@@ -704,7 +662,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         uploadForm.reset();
 
         // Reload merchant products + stats
-        await loadUserProducts(user);
+        await loadUserData(user);
       } catch (err) {
         console.error(err);
         showToast("Unexpected error uploading item", "error");
@@ -716,18 +674,22 @@ document.addEventListener("DOMContentLoaded", async () => {
    *  LOAD MERCHANT PRODUCTS + ANALYTICS
    * ======================================================= */
 
-  async function loadUserProducts(user) {
+  async function loadUserData(user) {
     if (!user || !merchantProductsList) return;
 
     merchantProductsList.innerHTML =
       '<li class="muted">Loading your products...</li>';
 
     try {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select("*")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false });
+      var dataBody = { 
+        user_id: user.id};
+
+      try {
+        const { json } = await callBackend("/getUserData", false, { method: "POST" , body: JSON.stringify(dataBody) });
+        console.log("Backend /getUserData response:", JSON.stringify(json, null, 2));
+      } catch (err) {
+        console.error("Error calling /getUserData endpoint:", err);
+      }
 
       if (error) {
         console.error(error);
