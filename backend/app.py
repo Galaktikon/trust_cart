@@ -378,11 +378,11 @@ async def add_to_cart(request: Request):
     body = await request.json()
     token = request.headers.get("Authorization").split(" ", 1)[1].strip()
 
-    add_cart_item = await add_cart_item(body, token)
+    new_cart_item = await add_cart_item(body, token)
 
     return {
         "message": "Hello from Python backend!",
-        "user": add_cart_item,
+        "user": new_cart_item,
     }
 
 @app.get("/retrieve_store_info")
