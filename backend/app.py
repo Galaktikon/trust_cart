@@ -124,7 +124,7 @@ async def create_user(body: dict):
 
     return new_user
 
-async def create_store(body: dict):
+async def create_store(body: dict, token: str):
     print(body)
     user_id = body.get("id")
     description = body.get("description")
@@ -142,6 +142,8 @@ async def create_store(body: dict):
                 )
         print("fetched name:")
         print(name)
+
+        supabase.postgrest.auth(token)
 
         new_store = (
             supabase
@@ -199,11 +201,12 @@ async def login(request: Request):
     # create a new store in the database
     user = await verify_token(request)
     body = await request.json()
+    token = request.headers.get("Authorization").split(" ", 1)[1].strip()
 
     if isinstance(body, str):
         body = json.loads(body)
 
-    new_store = await create_store(body)
+    new_store = await create_store(body, token)
 
     return {
         "message": "Hello from Python backend!",
