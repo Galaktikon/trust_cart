@@ -189,7 +189,7 @@ async def create_db_item(body: dict, token: str):
             supabase
                 .table("products")
                 .insert({
-                    "store_id": store,
+                    "store_id": store.data[0]['id'],
                     "name": title,
                     "description": description,
                     "price": price,
