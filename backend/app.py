@@ -569,7 +569,7 @@ async def add_to_cart(request: Request):
         "user": new_cart_item,
     }
 
-@app.get("/getUserData")
+@app.post("/getUserData")
 async def getUserData(request: Request):
     # gather store information from the database
     user = await verify_token(request)
