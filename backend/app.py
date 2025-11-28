@@ -255,7 +255,7 @@ async def login(request: Request):
         "user": new_store,
     }
 
-@app.get("/create_item")
+@app.post("/create_item")
 async def create_item(request: Request):
     # create a new item in the database
     user = await verify_token(request)
@@ -272,7 +272,7 @@ async def create_item(request: Request):
         "user": new_item,
     }
 
-@app.get("/add_to_cart")
+@app.post("/add_to_cart")
 async def add_to_cart(request: Request):
     # add an item to the user's cart
 
