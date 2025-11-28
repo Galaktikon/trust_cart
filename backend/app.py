@@ -250,6 +250,7 @@ async def add_cart_item(body: dict, token: str):
         print(cart)
         
         if len(cart.data) == 0:
+            supabase.postgrest.auth(token)
             new_cart = (
                 supabase
                     .table("orders")
@@ -264,6 +265,7 @@ async def add_cart_item(body: dict, token: str):
             cart_id = new_cart.data[0]['id']
             print(new_cart)
 
+            supabase.postgrest.auth(token)
             new_cart_item = (
                 supabase
                     .table("order_items")
@@ -278,7 +280,7 @@ async def add_cart_item(body: dict, token: str):
             print(new_cart_item)
         else:
             cart_id = cart.data[0]['id']
-
+            supabase.postgrest.auth(token)
             new_cart_item = (
                 supabase
                     .table("order_items")
