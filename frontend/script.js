@@ -592,7 +592,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         const filePath = fileName;
 
-        const { error: uploadError } = await supabaseClient.storage
+        /*const { error: uploadError } = await supabaseClient.storage
           .from("product-images")
           .upload(filePath, file);
 
@@ -628,6 +628,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.error(insertError);
           showToast("Error saving product", "error");
           return;
+        }*/
+
+        var itemBody = { 
+          id: user.id,
+          title: title,
+          price: price,
+          description: description,
+          filePath: filePath,
+          file: file};
+
+        try {
+          const { json } = await callBackend("/create_item", { method: "POST" , body: JSON.stringify(itemBody) });
+          console.log("Backend /create_item response:", JSON.stringify(json, null, 2));
+        } catch (err) {
+          console.error("Error calling /create_item endpoint:", err);
         }
 
         showToast("Item uploaded successfully!", "success");
