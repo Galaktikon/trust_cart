@@ -709,7 +709,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("Cart item:", item);
       });
 
-      const grid = document.getElementById("market-grid");
+      let grid = document.getElementById("market-grid");
       grid.innerHTML = "";
 
       all_items.forEach(item => {
@@ -730,7 +730,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       grid = document.getElementById("merchantProducts");
       grid.innerHTML = "";
 
-      all_items.forEach(item => {
+      store_items.forEach(item => {
         const card = document.createElement("div");
         card.className = "merchant-card";
 
