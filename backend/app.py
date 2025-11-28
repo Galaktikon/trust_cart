@@ -352,18 +352,18 @@ async def add_cart_item(body: dict, token: str):
                         .execute()
                     )
                 print(new_cart_item)
-            finally:
-                supabase.postgrest.auth(token)
-                cart_update = (
-                    supabase
-                        .table("orders")
-                        .update({
-                            "total_amount": cart.data[0]['total_amount'] + item.data[0]['price'],
-                        })
-                        .eq("id", cart_id)
-                        .execute()
-                )
-                print(cart_update)
+        
+            supabase.postgrest.auth(token)
+            cart_update = (
+                supabase
+                    .table("orders")
+                    .update({
+                        "total_amount": cart.data[0]['total_amount'] + item.data[0]['price'],
+                    })
+                    .eq("id", cart_id)
+                    .execute()
+            )
+            print(cart_update)
     except Exception as e:
         print("Error creating item:", e)
         raise HTTPException(status_code=500, detail="Failed to create item")
