@@ -559,11 +559,20 @@ document.addEventListener("DOMContentLoaded", async () => {
    *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (prototype)
    * ======================================================= */
 
-  const productButtons = document.querySelectorAll(".product-button");
-  productButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      showToast("Added to cart (demo)", "success");
-      // Later: update real cart state in Supabase or localStorage
+  const productCards = document.querySelectorAll(".market-card");
+  productCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      // Extract info from this card
+      const title = card.querySelector(".market-title")?.textContent.trim();
+      const meta = card.querySelector(".market-meta")?.textContent.trim();
+      const price = card.querySelector(".market-price")?.textContent.trim();
+      
+      console.log("Clicked product:", { title, meta, price });
+
+      // Show toast
+      showToast(`Added "${title}" to cart (demo)`, "success");
+
+
     });
   });
 
