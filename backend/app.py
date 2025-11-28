@@ -508,7 +508,7 @@ async def add_to_cart(request: Request):
     cart_items = await gather_cart_items(body, token)
     all_items = await gather_all_items(body, token)
     store_items = await gather_store_items(body, token)
-    store_info = await gather_store_info(body, token)`
+    store_info = await gather_store_info(body, token)
 
     return {
         "message": "Hello from Python backend!",
