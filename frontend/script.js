@@ -757,24 +757,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         statTotalOrders.textContent = "0";
       }
 
-      if (!data || data.length === 0) {
-        merchantProductsList.innerHTML =
-          '<li class="muted">No products yet. Use “List an Item for Sale” to add your first item.</li>';
-      } else {
-        merchantProductsList.innerHTML = "";
-        let totalValue = 0;
-
-        data.forEach((prod) => {
-          const li = document.createElement("li");
-          const price = typeof prod.price === "number" ? prod.price : 0;
-          totalValue += price;
-
-          li.textContent = `${prod.title} — $${price.toFixed(2)}`;
-          merchantProductsList.appendChild(li);
-        });
-
-        
-      }
     } catch (err) {
       console.error(err);
       merchantProductsList.innerHTML =
