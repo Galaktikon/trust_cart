@@ -174,7 +174,7 @@ async def create_db_item(body: dict, token: str):
     try:
         store = (
             supabase
-                .table("users")
+                .table("stores")
                 .select("id")
                 .eq("merchant_id", user_id)
                 .execute()
@@ -189,7 +189,7 @@ async def create_db_item(body: dict, token: str):
 
         new_item = (
             supabase
-                .table("items")
+                .table("products")
                 .insert({
                     "store_id": store,
                     "name": title,
