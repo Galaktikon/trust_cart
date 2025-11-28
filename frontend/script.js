@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /**
    * Get Authorization headers for talking to the FastAPI backend.
    */
-  async function getAuthHeaders() {
+  async function getAuthHeaders(f) {
     const { data, error } = await supabaseClient.auth.getSession();
     if (error) {
       console.error("Error getting session:", error);
@@ -238,21 +238,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!token) {
       throw new Error("No active auth token; user is not logged in");
     }
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+    if (f) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    } else {
+      return {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+    }
   }
 
   /**
    * Generic helper to call your FastAPI backend with auth.
    */
-  async function callBackend(endpoint, { method = "GET", body = null } = {}) {
-    const headers = await getAuthHeaders();
+  async function callBackend(endpoint, f, { method = "GET", body = null } = {}) {
+    const headers = await getAuthHeaders(f);
 
-    if (body != null) {
-      headers["Content-Type"] = "application/json";
-    }
     const opts = { method, headers };
 
     if (body != null) {
@@ -467,7 +470,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         description: "Store" };
 
       try {
-        const { json } = await callBackend("/login", { method: "POST" , body: JSON.stringify(loginBody) });
+        const { json } = await callBackend("/login", false, { method: "POST" , body: JSON.stringify(loginBody) });
         console.log("Backend /login response:", JSON.stringify(json, null, 2));
       } catch (err) {
         console.error("Error calling /login endpoint:", err);
@@ -580,14 +583,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const price = parseFloat(itemPrice?.value || "0");
       const description = (itemDescription?.value || "").trim();
       const file = itemImage?.files?.[0];
-      console.log("Uploading item:", {itemImage});
       //check if any values are being retured
-      console.log("Title:", title);
-      console.log("Price:", price);
-      console.log("Description:", description);
-      console.log("File:", file);
-      //update get elementby id here 
       
+      //update get elementby id here 
+
 
       if (!title || !file || isNaN(price) || price < 0) {
         showToast("Please fill out all required fields correctly", "error");
@@ -599,6 +598,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const fileExt = file.name.split(".").pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         const filePath = fileName;
+        console.log("Title:", title);
+        console.log("Price:", price);
+        console.log("Description:", description);
+        console.log("File:", file);
+        console.log("File path:", filePath);
 
         /*const { error: uploadError } = await supabaseClient.storage
           .from("product-images")
@@ -638,16 +642,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }*/
 
-        var itemBody = { 
-          id: user.id,
-          title: title,
-          price: price,
-          description: description,
-          filePath: filePath,
-          file: file};
+        const formData = new FormData();
+        formData.append("user_id", user.id);
+        formData.append("title", title);
+        formData.append("price", price);
+        formData.append("description", description);
+        formData.append("filePath", filePath);
+        formData.append("file", file);
 
         try {
-          const { json } = await callBackend("/create_item", { method: "POST" , body: JSON.stringify(itemBody) });
+          const { json } = await callBackend("/create_item", true,{ method: "POST" , body: formData });
           console.log("Backend /create_item response:", JSON.stringify(json, null, 2));
         } catch (err) {
           console.error("Error calling /create_item endpoint:", err);
@@ -729,7 +733,7 @@ document.addEventListener("DOMContentLoaded", async () => {
    * ======================================================= */
 
   async function createLinkToken() {
-    const { json } = await callBackend("/create_link_token", {
+    const { json } = await callBackend("/create_link_token", false,{
       method: "POST",
       body: {},
     });
@@ -744,7 +748,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function exchangePublicToken(public_token, metadata) {
-    const { json } = await callBackend("/exchange_public_token", {
+    const { json } = await callBackend("/exchange_public_token", false, {
       method: "POST",
       body: { public_token, metadata },
     });

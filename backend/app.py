@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -162,7 +162,7 @@ async def create_store(body: dict, token: str):
     return new_store
 
 async def create_db_item(body: dict, token: str):
-    user_id = body.get("id")
+    user_id = body.get("user_id")
     title = body.get("title")
     description = body.get("description")
     price = body.get("price")
@@ -263,14 +263,25 @@ async def login(request: Request):
     }
 
 @app.post("/create_item")
-async def create_item(request: Request):
+async def create_item(request: Request,
+    user_id: str = Form(...),
+    title: str = Form(...),
+    price: float = Form(...),
+    description: str = Form(...),
+    filePath: str = Form(...),
+    file: UploadFile = File(...)):
     # create a new item in the database
     user = await verify_token(request)
-    body = await request.json()
     token = request.headers.get("Authorization").split(" ", 1)[1].strip()
 
-    if isinstance(body, str):
-        body = json.loads(body)
+    body = {
+        "user_id": user_id,  
+        "title": title,
+        "price": price,
+        "description": description,
+        "filePath": filePath,
+        "file": file,
+    }
 
     new_item = await create_db_item(body, token)
 
