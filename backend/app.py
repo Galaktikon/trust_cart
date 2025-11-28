@@ -172,6 +172,9 @@ async def create_db_item(body: dict, token: str):
     if not title or not price or not user_id:
         raise HTTPException(status_code=400, detail="Title, price, and user ID are required")
     try:
+        print(user_id)
+        supabase.postgrest.auth(token)
+
         store = (
             supabase
                 .table("stores")
