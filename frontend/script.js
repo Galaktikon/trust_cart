@@ -684,19 +684,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       var dataBody = { 
         user_id: user.id};
    
-      let json;
+      let response;
 
       try {
         const { json } = await callBackend("/getUserData", false, { method: "POST" , body: JSON.stringify(dataBody) });
+        response = json
         console.log("Backend /getUserData response:", JSON.stringify(json, null, 2));
       } catch (err) {
         console.error("Error calling /getUserData endpoint:", err);
       }
 
-      var all_items = json.all_items.data
-      var store_info = json.store_info.data
-      var store_items = json.store_items.data
-      var cart_items = json.cart_items.data
+      var all_items = response.all_items.data
+      var store_info = response.store_info.data
+      var store_items = response.store_items.data
+      var cart_items = response.cart_items.data
 
       all_items.forEach((item) => {
         console.log("All item:", item);
