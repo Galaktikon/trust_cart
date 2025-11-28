@@ -746,6 +746,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         grid.appendChild(card);
       });
 
+      grid = document.getElementById("cartList");
+      grid.innerHTML = "";
+
+      cart_items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "merchant-card";
+
+        var name;
+        all_items.forEach(prod => {
+          if (prod.id === item.product_id) {
+            name = prod.name;
+          }
+        });
+
+        card.innerHTML = `
+          <div class="market-body">
+            <div class="market-title">${name}</div>
+            <div class="market-meta">${item.quantity}</div>
+            <div class="market-price">$${item.price.toFixed(2)}</div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
       // Update analytics
       if (statTotalProducts) {
         statTotalProducts.textContent = store_items.length.toString();
