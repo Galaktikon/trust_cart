@@ -576,6 +576,9 @@ async def getUserData(request: Request):
     body = await request.json()
     token = request.headers.get("Authorization").split(" ", 1)[1].strip()
 
+    if isinstance(body, str):
+        body = json.loads(body)
+
     cart_items = await gather_cart_items(body, token)
     all_items = await gather_all_items(body, token)
     store_items = await gather_store_items(body, token)
