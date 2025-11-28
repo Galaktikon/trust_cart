@@ -739,7 +739,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <div class="market-title">${item.name}</div>
             <div class="market-meta">${item.description}</div>
             <div class="market-price">$${item.price.toFixed(2)}</div>
-            <div class="market-stock">$${item.stock}</div>
+            <div class="market-stock">${item.stock} left</div>
           </div>
         `;
 
