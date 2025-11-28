@@ -220,7 +220,7 @@ async def create_db_item(body: dict, token: str):
 
     return new_item
 
-async def create_db_item(body: dict, token: str):
+async def add_cart_item(body: dict, token: str):
     user_id = body.get("user_id")
     title = body.get("title")
 
@@ -234,7 +234,7 @@ async def create_db_item(body: dict, token: str):
             supabase
                 .table("products")
                 .select("*")
-                .eq("id", user_id)
+                .eq("name", title)
                 .execute()
                 )
 
