@@ -537,11 +537,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const { data, error } = await supabaseClient
         .from("users")
-        .insert({
-          id: signupData.user.id,
-          role: "customer",
-          display_name: name
-        });
+        .select("id")
+        .eq("id", signupData.user.id)
+        .single();
+
+      if (data) {
+        console.log("User already exists in 'users' table:", data);
+        
+      } else {
+        const { data, error } = await supabaseClient
+          .from("users")
+          .insert({
+            id: signupData.user.id,
+            role: "customer",
+            display_name: name
+          });
+      }
 
       if (error) {
         console.error("Error inserting user:", error);

@@ -96,8 +96,6 @@ async def verify_token(request: Request):
 # ============================================================
 # Supabase helper functions
 # ============================================================
-
-async def create_user(body: dict):
     name = body.get("name")
     email = body.get("email")
     password = body.get("password")
@@ -106,6 +104,13 @@ async def create_user(body: dict):
         raise HTTPException(status_code=400, detail="Email and password are required")
 
     try:
+        check_user = (
+            supabase
+                .table("users")
+                .select("*")
+                .eq("email", email)
+                .execute()
+        )
         new_user = (
             supabase
                 .table("users")
@@ -369,7 +374,7 @@ async def gather_store_info(body: dict, token: str):
         store = (
             supabase
                 .table("stores")
-                .select("id")
+                .select("*")
                 .eq("merchant_id", user_id)
                 .execute()
                 )
@@ -435,18 +440,6 @@ async def root():
 # ============================================================
 # /endpoints
 # ============================================================
-
-@app.post("/register")
-async def register(request: Request):
-    # create a new user in the database
-    body = await request.json()
-
-    new_user = await create_user(body)
-
-    return {
-        "message": "Hello from Python backend!",
-        "user": new_user,
-    }
 
 @app.post("/login")
 async def login(request: Request):
