@@ -43,6 +43,7 @@ if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise RuntimeError("SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+supabase_service: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
 
 # ============================================================
 # Plaid configuration (optional; app will still run without it)
@@ -190,7 +191,7 @@ async def create_db_item(body: dict, token: str):
         print(type(file))
         file_bytes = await file.read()
         try:
-            result = supabase.storage.from_("product-images").upload(file_path, file_bytes, {"content-type": file.content_type})
+            result = supabase_service.storage.from_("product-images").upload(file_path, file_bytes, {"content-type": file.content_type})
             print("Upload result:", result)
         except Exception as e:
             print("Upload failed:", e)
@@ -209,7 +210,7 @@ async def create_db_item(body: dict, token: str):
                     "description": description,
                     "price": price,
                     "stock": "10",
-                    "image_url": image_url.public_url,
+                    "image_url": image_url['public_url'],
                 })
                 .execute()
                 )
