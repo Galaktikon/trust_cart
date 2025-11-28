@@ -581,6 +581,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const description = (itemDescription?.value || "").trim();
       const file = itemImage?.files?.[0];
       console.log("Uploading item:", {itemImage});
+      //check if any values are being retured
+      console.log("Title:", title);
+      console.log("Price:", price);
+      console.log("Description:", description);
+      console.log("File:", file);
+      //update get elementby id here 
+      
 
       if (!title || !file || isNaN(price) || price < 0) {
         showToast("Please fill out all required fields correctly", "error");
