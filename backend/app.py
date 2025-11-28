@@ -139,28 +139,42 @@ async def create_store(body: dict, token: str):
         raise HTTPException(status_code=400, detail="User ID is required")
     print("starting create store")
     try:
-        name = (
-            supabase
-                .table("users")
-                .select("display_name")
-                .eq("id", user_id)
-                .execute()
-                )
-        print("fetched name:")
-        print(name)
-
-        supabase.postgrest.auth(token)
-
-        new_store = (
+        store = (
             supabase
                 .table("stores")
-                .insert({
-                    "merchant_id": user_id,
-                    "name": name.data[0]['display_name'] + "'s Store",
-                    "description": description,
-                })
+                .select("id")
+                .eq("merchant_id", user_id)
                 .execute()
                 )
+
+        print(store)
+
+        if len(store.data) > 0:
+            print("Store already exists")
+            new_store = store
+        else:
+            name = (
+                supabase
+                    .table("users")
+                    .select("display_name")
+                    .eq("id", user_id)
+                    .execute()
+                    )
+            print("fetched name:")
+            print(name)
+
+            supabase.postgrest.auth(token)
+
+            new_store = (
+                supabase
+                    .table("stores")
+                    .insert({
+                        "merchant_id": user_id,
+                        "name": name.data[0]['display_name'] + "'s Store",
+                        "description": description,
+                    })
+                    .execute()
+                    )
     except Exception as e:
         print("Error creating user:", e)
         raise HTTPException(status_code=500, detail="Failed to create user")
@@ -190,35 +204,49 @@ async def create_db_item(body: dict, token: str):
                 )
 
         print(store)
-        print(file_path)
-        print(type(file_path))
-        print(file)
-        print(type(file))
-        file_bytes = await file.read()
-        try:
-            result = supabase_service.storage.from_("product-images").upload(file_path, file_bytes, {"content-type": file.content_type})
-            print("Upload result:", result)
-        except Exception as e:
-            print("Upload failed:", e)
-
-        image_url = supabase.storage.from_("product-images").get_public_url(file_path)
-        print(image_url)
 
         supabase.postgrest.auth(token)
-
-        new_item = (
+        item = (
             supabase
                 .table("products")
-                .insert({
-                    "store_id": store.data[0]['id'],
-                    "name": title,
-                    "description": description,
-                    "price": price,
-                    "stock": 10,
-                    "image_url": image_url,
-                })
+                .select("id")
+                .eq("name", title)
+                .eq("store_id", store.data[0]['id'])
                 .execute()
-                )
+        )
+        print(item)
+
+        if len(item.data) > 0:
+            print("Item already exists for this store")
+            new_item = item
+        else:
+            print(file_path)
+            print(file)
+            file_bytes = await file.read()
+            try:
+                result = supabase_service.storage.from_("product-images").upload(file_path, file_bytes, {"content-type": file.content_type})
+                print("Upload result:", result)
+            except Exception as e:
+                print("Upload failed:", e)
+
+            image_url = supabase.storage.from_("product-images").get_public_url(file_path)
+            print(image_url)
+
+            supabase.postgrest.auth(token)
+
+            new_item = (
+                supabase
+                    .table("products")
+                    .insert({
+                        "store_id": store.data[0]['id'],
+                        "name": title,
+                        "description": description,
+                        "price": price,
+                        "stock": 10,
+                        "image_url": image_url,
+                    })
+                    .execute()
+                    )
     except Exception as e:
         print("Error creating item:", e)
         raise HTTPException(status_code=500, detail="Failed to create item")
@@ -286,19 +314,54 @@ async def add_cart_item(body: dict, token: str):
         else:
             cart_id = cart.data[0]['id']
             supabase.postgrest.auth(token)
-            new_cart_item = (
+            cart_item = (
                 supabase
                     .table("order_items")
-                    .insert({
-                        "order_id": cart_id,
-                        "product_id": item.data[0]['id'],
-                        "quantity": 1,
-                        "price": item.data[0]['price'],
-                    })
+                    .select("id", "quantity")
+                    .eq("order_id", cart_id)
+                    .eq("product_id", item.data[0]['id'])
                     .execute()
-                )
-            print(new_cart_item)
+            )
 
+            if len(cart_item.data) > 0:
+                print("Item already in cart, updating quantity")
+                new_quantity = cart_item.data[0]['quantity'] + 1
+                supabase.postgrest.auth(token)
+                updated_cart_item = (
+                    supabase
+                        .table("order_items")
+                        .update({
+                            "quantity": new_quantity,
+                        })
+                        .eq("id", cart_item.data[0]['id'])
+                        .execute()
+                    )
+                print(updated_cart_item)
+                new_cart_item = updated_cart_item
+            else:
+                supabase.postgrest.auth(token)
+                new_cart_item = (
+                    supabase
+                        .table("order_items")
+                        .insert({
+                            "order_id": cart_id,
+                            "product_id": item.data[0]['id'],
+                            "quantity": 1,
+                            "price": item.data[0]['price'],
+                        })
+                        .execute()
+                    )
+                print(new_cart_item)
+        
+        cart_update = (
+            supabase
+                .table("orders")
+                .update({
+                    "total_amount": cart.data[0]['total_amount'] + item.data[0]['price'],
+                })
+                .eq("id", cart_id)
+                .execute()
+        )
     except Exception as e:
         print("Error creating item:", e)
         raise HTTPException(status_code=500, detail="Failed to create item")
