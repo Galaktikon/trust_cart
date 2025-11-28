@@ -189,8 +189,12 @@ async def create_db_item(body: dict, token: str):
         print(file)
         print(type(file))
         file_bytes = await file.read()
-        result = supabase.storage.from_("product-images").upload(file_path, file_bytes, {"content-type": file.content_type})
-        print(result)
+        try:
+            result = supabase.storage.from_("product-images").upload(file_path, file_bytes, {"content-type": file.content_type})
+            print("Upload result:", result)
+        except Exception as e:
+            print("Upload failed:", e)
+
         image_url = supabase.storage.from_("product-images").get_public_url(file_path)
         print(image_url)
 
