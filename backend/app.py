@@ -300,6 +300,122 @@ async def add_cart_item(body: dict, token: str):
 
     return new_cart_item
 
+async def gather_all_items(body: dict, token: str):
+    user_id = body.get("user_id")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user ID is required")
+    try:
+        print(user_id)
+        supabase.postgrest.auth(token)
+
+        items = (
+            supabase
+                .table("products")
+                .select("*")
+                .execute()
+                )
+        print(items)
+
+    except Exception as e:
+        print("Error creating item:", e)
+        raise HTTPException(status_code=500, detail="Failed to create item")
+
+    return items
+
+async def gather_store_items(body: dict, token: str):
+    user_id = body.get("user_id")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user ID is required")
+    try:
+        print(user_id)
+
+        supabase.postgrest.auth(token)
+        store = (
+            supabase
+                .table("stores")
+                .select("id")
+                .eq("merchant_id", user_id)
+                .execute()
+                )
+        print(store)
+
+        supabase.postgrest.auth(token)
+        items = (
+            supabase
+                .table("products")
+                .select("*")
+                .eq("store_id", store.data[0]['id'])
+                .execute()
+                )
+        print(items)
+
+    except Exception as e:
+        print("Error creating item:", e)
+        raise HTTPException(status_code=500, detail="Failed to create item")
+
+    return items
+
+async def gather_store_info(body: dict, token: str):
+    user_id = body.get("user_id")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user ID is required")
+    try:
+        print(user_id)
+
+        supabase.postgrest.auth(token)
+        store = (
+            supabase
+                .table("stores")
+                .select("id")
+                .eq("merchant_id", user_id)
+                .execute()
+                )
+        print(store)
+
+    except Exception as e:
+        print("Error creating item:", e)
+        raise HTTPException(status_code=500, detail="Failed to create item")
+
+    return store
+
+async def gather_cart_items(body: dict, token: str):
+    user_id = body.get("user_id")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user ID is required")
+    try:
+        print(user_id)
+
+        supabase.postgrest.auth(token)
+        cart = (
+            supabase
+                .table("orders")
+                .select("*")
+                .eq("customer_id", user_id)
+                .eq("status", "draft")
+                .execute()
+                )
+        print(cart)
+
+        supabase.postgrest.auth(token)
+        items = (
+            supabase
+                .table("products")
+                .select("*")
+                .eq("order_id", cart.data[0]['id'])
+                .execute()
+                )
+        print(items)
+
+    except Exception as e:
+        print("Error creating item:", e)
+        raise HTTPException(status_code=500, detail="Failed to create item")
+
+    return items
+
 # ============================================================
 # Pydantic models for request bodies
 # ============================================================
@@ -389,10 +505,18 @@ async def add_to_cart(request: Request):
         body = json.loads(body)
 
     new_cart_item = await add_cart_item(body, token)
+    cart_items = await gather_cart_items(body, token)
+    all_items = await gather_all_items(body, token)
+    store_items = await gather_store_items(body, token)
+    store_info = await gather_store_info(body, token)`
 
     return {
         "message": "Hello from Python backend!",
         "user": new_cart_item,
+        "cart_items": cart_items,
+        "all_items": all_items,
+        "store_items": store_items,
+        "store_info": store_info,
     }
 
 @app.get("/retrieve_store_info")
