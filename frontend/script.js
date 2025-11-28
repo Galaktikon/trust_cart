@@ -538,7 +538,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const { data, error } = await supabaseClient
         .from("users")
         .select("id")
-        .eq("id", signupData.user.id)
+        .eq("email", email)
         .single();
 
       if (data) {
@@ -550,7 +550,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           .insert({
             id: signupData.user.id,
             role: "customer",
-            display_name: name
+            display_name: name,
+            email: email,
           });
       }
 
