@@ -220,6 +220,79 @@ async def create_db_item(body: dict, token: str):
 
     return new_item
 
+async def create_db_item(body: dict, token: str):
+    user_id = body.get("user_id")
+    title = body.get("title")
+
+    if not title or not price or not user_id:
+        raise HTTPException(status_code=400, detail="Title, price, and user ID are required")
+    try:
+        print(user_id)
+        supabase.postgrest.auth(token)
+
+        item = (
+            supabase
+                .table("products")
+                .select("*")
+                .eq("id", user_id)
+                .execute()
+                )
+
+        cart = (
+            supabase
+                .table("orders")
+                .select("*")
+                .eq("customer_id", user_id)
+                .eq("status", "draft")
+                .execute()
+                )
+        
+        if len(cart.data) == 0:
+            new_cart = (
+                supabase
+                    .table("orders")
+                    .insert({
+                        "customer_id": user_id,
+                        "store_id": item.data[0]['store_id'],
+                        "total_amount": 0,
+                        "status": "draft",
+                    })
+                    .execute()
+                    )
+            cart_id = new_cart.data[0]['id']
+
+            new_cart_item = (
+                supabase
+                    .table("order_items")
+                    .insert({
+                        "order_id": cart_id,
+                        "product_id": item.data[0]['id'],
+                        "quantity": 1,
+                        "price": item.data[0]['price'],
+                    })
+                    .execute()
+                )
+        else:
+            cart_id = cart.data[0]['id']
+
+            new_cart_item = (
+                supabase
+                    .table("order_items")
+                    .insert({
+                        "order_id": cart_id,
+                        "product_id": item.data[0]['id'],
+                        "quantity": 1,
+                        "price": item.data[0]['price'],
+                    })
+                    .execute()
+                )
+
+    except Exception as e:
+        print("Error creating item:", e)
+        raise HTTPException(status_code=500, detail="Failed to create item")
+
+    return new_cart_item
+
 # ============================================================
 # Pydantic models for request bodies
 # ============================================================
@@ -302,13 +375,14 @@ async def add_to_cart(request: Request):
     # add an item to the user's cart
 
     user = await verify_token(request)
+    body = await request.json()
+    token = request.headers.get("Authorization").split(" ", 1)[1].strip()
 
-
+    add_cart_item = await add_cart_item(body, token)
 
     return {
         "message": "Hello from Python backend!",
-        "user": user.email,
-        "id": user.id,
+        "user": add_cart_item,
     }
 
 @app.get("/retrieve_store_info")
