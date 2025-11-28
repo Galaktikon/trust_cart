@@ -403,7 +403,7 @@ async def gather_cart_items(body: dict, token: str):
         supabase.postgrest.auth(token)
         items = (
             supabase
-                .table("products")
+                .table("order_items")
                 .select("*")
                 .eq("order_id", cart.data[0]['id'])
                 .execute()
