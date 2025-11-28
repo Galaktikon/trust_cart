@@ -180,8 +180,10 @@ async def create_db_item(body: dict, token: str):
                 .execute()
                 )
 
+        print(store)
         result = supabase.storage.from_("product-images").upload(file_path, file)
         image_url = supabase.storage.from_("product-images").get_public_url(file_path)
+        print(image_url)
 
         supabase.postgrest.auth(token)
 
@@ -193,8 +195,8 @@ async def create_db_item(body: dict, token: str):
                     "name": title,
                     "description": description,
                     "price": price,
-                    "stock": 10,
-                    "image_url": image_url,
+                    "stock": "10",
+                    "image_url": image_url.public_url,
                 })
                 .execute()
                 )
