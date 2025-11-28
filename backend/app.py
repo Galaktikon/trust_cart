@@ -184,6 +184,10 @@ async def create_db_item(body: dict, token: str):
                 )
 
         print(store)
+        print(file_path)
+        print(type(file_path))
+        print(file)
+        print(type(file))
         result = supabase.storage.from_("product-images").upload(file_path, file)
         image_url = supabase.storage.from_("product-images").get_public_url(file_path)
         print(image_url)
