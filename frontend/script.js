@@ -735,10 +735,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         card.className = "merchant-card";
 
         card.innerHTML = `
-          <div class="merchant-body">
-            <div class="merchant-title">${item.name}</div>
-            <div class="merchant-meta">${item.description}</div>
-            <div class="merchant-price">$${item.price.toFixed(2)}</div>
+          <div class="market-body">
+            <div class="market-title">${item.name}</div>
+            <div class="market-meta">${item.description}</div>
+            <div class="market-price">$${item.price.toFixed(2)}</div>
+            <div class="market-stock">$${item.stock}</div>
           </div>
         `;
 
