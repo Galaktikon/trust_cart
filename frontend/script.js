@@ -691,11 +691,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Error calling /getUserData endpoint:", err);
       }
 
-      if (error) {
-        console.error(error);
-        merchantProductsList.innerHTML =
-          '<li class="muted">Could not load products.</li>';
-        return;
+      var all_items = json.all_items.data[0]
+      var store_info = json.store_info.data[0]
+      var store_items = json.store_items.data[0]
+      var cart_items = json.cart_items.data[0]
+
+      all_items.forEach((item) => {
+        console.log("All item:", item);
+      });
+
+      let totalValue = 0;
+      store_items.forEach((item) => {
+        console.log("Store item:", item);
+        totalValue += item.price || 0;
+      });
+
+      cart_items.forEach((item) => {
+        console.log("Cart item:", item);
+      });
+
+      // Update analytics
+      if (statTotalProducts) {
+        statTotalProducts.textContent = store_items.length.toString();
+      }
+      if (statTotalValue) {
+        statTotalValue.textContent = `$${totalValue.toFixed(2)}`;
+      }
+      if (statTotalOrders) {
+        // For now, demo value = 0; future work: compute from orders table
+        statTotalOrders.textContent = "0";
       }
 
       if (!data || data.length === 0) {
@@ -714,17 +738,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           merchantProductsList.appendChild(li);
         });
 
-        // Update analytics
-        if (statTotalProducts) {
-          statTotalProducts.textContent = data.length.toString();
-        }
-        if (statTotalValue) {
-          statTotalValue.textContent = `$${totalValue.toFixed(2)}`;
-        }
-        if (statTotalOrders) {
-          // For now, demo value = 0; future work: compute from orders table
-          statTotalOrders.textContent = "0";
-        }
+        
       }
     } catch (err) {
       console.error(err);
