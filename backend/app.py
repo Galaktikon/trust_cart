@@ -224,7 +224,7 @@ async def add_cart_item(body: dict, token: str):
     user_id = body.get("user_id")
     title = body.get("title")
 
-    if not title or not price or not user_id:
+    if not title or not user_id:
         raise HTTPException(status_code=400, detail="Title, price, and user ID are required")
     try:
         print(user_id)
@@ -237,6 +237,7 @@ async def add_cart_item(body: dict, token: str):
                 .eq("name", title)
                 .execute()
                 )
+        print(item)
 
         cart = (
             supabase
@@ -246,6 +247,7 @@ async def add_cart_item(body: dict, token: str):
                 .eq("status", "draft")
                 .execute()
                 )
+        print(cart)
         
         if len(cart.data) == 0:
             new_cart = (
@@ -260,6 +262,7 @@ async def add_cart_item(body: dict, token: str):
                     .execute()
                     )
             cart_id = new_cart.data[0]['id']
+            print(new_cart)
 
             new_cart_item = (
                 supabase
@@ -272,6 +275,7 @@ async def add_cart_item(body: dict, token: str):
                     })
                     .execute()
                 )
+            print(new_cart_item)
         else:
             cart_id = cart.data[0]['id']
 
@@ -286,6 +290,7 @@ async def add_cart_item(body: dict, token: str):
                     })
                     .execute()
                 )
+            print(new_cart_item)
 
     except Exception as e:
         print("Error creating item:", e)
