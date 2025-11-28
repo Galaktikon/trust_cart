@@ -210,7 +210,7 @@ async def create_db_item(body: dict, token: str):
                     "description": description,
                     "price": price,
                     "stock": 10,
-                    "image_url": image_url['public_url'],
+                    "image_url": image_url,
                 })
                 .execute()
                 )
