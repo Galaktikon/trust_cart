@@ -294,6 +294,7 @@ async def add_cart_item(body: dict, token: str):
                     })
                     .execute()
                     )
+            cart = new_cart
             cart_id = new_cart.data[0]['id']
             print(new_cart)
 
@@ -362,6 +363,7 @@ async def add_cart_item(body: dict, token: str):
                 .eq("id", cart_id)
                 .execute()
         )
+        
         print("cart updated:", cart.data[0]['total_amount'] + item.data[0]['price'])
     except Exception as e:
         print("Error creating item:", e)
