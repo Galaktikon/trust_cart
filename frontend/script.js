@@ -598,7 +598,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Show toast
       showToast(`Added "${title}" to cart (demo)`, "success");
-
+      await loadUserData(user);
 
     });
   });
