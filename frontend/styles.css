@@ -454,6 +454,14 @@ a {
   color: var(--text-muted);
 }
 
+.market-image {
+  width: 100%;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
 /* ============ BANK / PAYOUT SECTION ============ */
 #bank {
   /* Styling consistent with products-section via shared class */
