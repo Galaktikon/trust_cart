@@ -261,10 +261,9 @@ async def add_cart_item(body: dict, token: str):
         raise HTTPException(status_code=400, detail="Title, price, and user ID are required")
     try:
         print(user_id)
-        supabase.postgrest.auth(token)
 
         item = (
-            supabase
+            supabase_service
                 .table("products")
                 .select("*")
                 .eq("name", title)
