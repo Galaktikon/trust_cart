@@ -69,9 +69,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const regPassword = document.getElementById("regPassword");
 
   // Dashboard elements
-  const bankSection = document.getElementById("bank");
-  const linkButton = document.getElementById("link-bank-btn");
-
   const merchantProductsList = document.getElementById("merchantProducts");
   const statTotalProducts = document.getElementById("statTotalProducts");
   const statTotalValue = document.getElementById("statTotalValue");
@@ -338,16 +335,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       user.user_metadata?.full_name || user.email || "Merchant";
 
     showToast(`Welcome, ${displayName}`, "success");
-
-    // Show the bank / payouts section (Plaid integration)
-    if (bankSection) {
-      bankSection.classList.remove("hidden");
-    }
-
-    // Initialize Plaid (only once)
-    if (linkButton && !plaidInitialized) {
-      await initPlaidLink();
-    }
 
     // Load merchant's products + analytics
     await loadUserData(user);
@@ -797,93 +784,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  /* =======================================================
-   *  PLAID LINK (Bank connection after signup/login)
-   * ======================================================= */
-
-  async function createLinkToken() {
-    const { json } = await callBackend("/create_link_token", false,{
-      method: "POST",
-      body: {},
-    });
-
-    if (!json.link_token) {
-      throw new Error(
-        "Backend /create_link_token did not return link_token in response"
-      );
-    }
-
-    return json.link_token;
-  }
-
-  async function exchangePublicToken(public_token, metadata) {
-    const { json } = await callBackend("/exchange_public_token", false, {
-      method: "POST",
-      body: { public_token, metadata },
-    });
-
-    if (json.status && json.status !== "ok") {
-      throw new Error(
-        `Backend /exchange_public_token returned non-ok status: ${json.status}`
-      );
-    }
-
-    return json;
-  }
-
-  async function initPlaidLink() {
-    if (plaidInitialized) return;
-    plaidInitialized = true;
-
-    if (typeof Plaid === "undefined") {
-      showToast("Plaid Link script missing", "error");
-      console.error("Plaid global not found. Check script tag in HTML.");
-      return;
-    }
-
-    if (!linkButton) {
-      console.warn("link-bank-btn not found in DOM.");
-      return;
-    }
-
-    try {
-      const linkToken = await createLinkToken();
-
-      plaidHandler = Plaid.create({
-        token: linkToken,
-        onSuccess: async (public_token, metadata) => {
-          showToast("Bank linked!", "success");
-          try {
-            const result = await exchangePublicToken(public_token, metadata);
-            console.log(
-              "Plaid exchange_public_token result:",
-              JSON.stringify(result, null, 2)
-            );
-            showToast("Bank connection saved", "success");
-          } catch (err) {
-            console.error(err);
-            showToast("Error saving bank", "error");
-          }
-        },
-        onExit: (err, metadata) => {
-          if (err) {
-            console.error("Plaid exit with error:", err, metadata);
-            showToast("Bank connection canceled", "error");
-          }
-        },
-      });
-
-      linkButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (plaidHandler) {
-          plaidHandler.open();
-        }
-      });
-    } catch (err) {
-      console.error(err);
-      showToast("Could not initialize Plaid", "error");
-    }
-  }
-
-  // NOTE: Plaid is initialized as part of onAuthSuccess() after login/sign-up.
 });
