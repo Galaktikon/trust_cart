@@ -571,7 +571,7 @@ document.addEventListener("DOMContentLoaded", async () => {
    *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (prototype)
    * ======================================================= */
 
-  const productCards = document.querySelectorAll(".market-card");
+  var productCards = document.querySelectorAll(".market-card");
   productCards.forEach((card) => {
     card.addEventListener("click", async () => {
       // Extract info from this card
@@ -783,6 +783,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // For now, demo value = 0; future work: compute from orders table
         statTotalOrders.textContent = "0";
       }
+
+      productCards = document.querySelectorAll(".market-card");
+
 
     } catch (err) {
       console.error(err);
