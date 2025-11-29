@@ -462,17 +462,6 @@ a {
   border-radius: 6px;
 }
 
-/* ============ BANK / PAYOUT SECTION ============ */
-#bank {
-  /* Styling consistent with products-section via shared class */
-}
-
-#link-bank-btn {
-  margin-top: 12px;
-  padding-left: 22px;
-  padding-right: 22px;
-}
-
 /* ============ REVIEWS ============ */
 .reviews-list {
   display: grid;
