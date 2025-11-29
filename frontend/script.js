@@ -737,7 +737,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         card.innerHTML = `
           <div class="market-body">
-            <img src="${item.image_url}" alt="${item.name}" class="market-image" />
             <div class="market-title">${item.name}</div>
             <div class="market-meta">${item.description}</div>
             <div class="market-price">$${item.price.toFixed(2)}</div>
@@ -764,7 +763,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         card.innerHTML = `
           <div class="market-body">
-            <img src="${item.image_url}" alt="${item.name}" class="market-image" />
             <div class="market-title">${name}</div>
             <div class="market-meta">${item.quantity}</div>
             <div class="market-price">$${item.price.toFixed(2)}</div>
