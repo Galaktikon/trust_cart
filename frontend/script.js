@@ -293,6 +293,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     return { json, res };
   }
 
+  async function refreshClickListeners() {
+    var productCards = document.querySelectorAll(".market-card");
+    productCards.forEach((card) => {
+      card.addEventListener("click", async () => {
+        // Extract info from this card
+        const title = card.querySelector(".market-title")?.textContent.trim();
+        const meta = card.querySelector(".market-meta")?.textContent.trim();
+        const price = card.querySelector(".market-price")?.textContent.trim();
+
+        console.log("Clicked product:", { title, meta, price });
+
+        const { data: userData, error: userErr } =
+          await supabaseClient.auth.getUser();
+        const user = userData?.user;
+
+        var addCartBody = { 
+          user_id: user.id,
+          title: title };
+
+        try {
+          const { json } = await callBackend("/add_to_cart", false, { method: "POST" , body: JSON.stringify(addCartBody) });
+          console.log("Backend /add_to_cart response:", JSON.stringify(json, null, 2));
+        } catch (err) {
+          console.error("Error calling /add_to_cart endpoint:", err);
+        }
+
+        // Show toast
+        showToast(`Added "${title}" to cart (demo)`, "success");
+        await loadUserData(user);
+
+      });
+    });
+  }
+
   // Called whenever auth succeeds (login OR already logged in OR sign-up with session)
   async function onAuthSuccess(user) {
     if (!user) return;
@@ -571,37 +605,7 @@ document.addEventListener("DOMContentLoaded", async () => {
    *  SIMPLE "ADD TO CART" BUTTON FEEDBACK (prototype)
    * ======================================================= */
 
-  var productCards = document.querySelectorAll(".market-card");
-  productCards.forEach((card) => {
-    card.addEventListener("click", async () => {
-      // Extract info from this card
-      const title = card.querySelector(".market-title")?.textContent.trim();
-      const meta = card.querySelector(".market-meta")?.textContent.trim();
-      const price = card.querySelector(".market-price")?.textContent.trim();
-
-      console.log("Clicked product:", { title, meta, price });
-
-      const { data: userData, error: userErr } =
-        await supabaseClient.auth.getUser();
-      const user = userData?.user;
-
-      var addCartBody = { 
-        user_id: user.id,
-        title: title };
-
-      try {
-        const { json } = await callBackend("/add_to_cart", false, { method: "POST" , body: JSON.stringify(addCartBody) });
-        console.log("Backend /add_to_cart response:", JSON.stringify(json, null, 2));
-      } catch (err) {
-        console.error("Error calling /add_to_cart endpoint:", err);
-      }
-
-      // Show toast
-      showToast(`Added "${title}" to cart (demo)`, "success");
-      await loadUserData(user);
-
-    });
-  });
+  refreshClickListeners();
 
   /* =======================================================
    *  USER PRODUCT UPLOAD (Image + Row in "products" table)
@@ -784,8 +788,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         statTotalOrders.textContent = "0";
       }
 
-      productCards = document.querySelectorAll(".market-card");
-
+      refreshClickListeners();
 
     } catch (err) {
       console.error(err);
