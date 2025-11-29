@@ -377,10 +377,9 @@ async def gather_all_items(body: dict, token: str):
         raise HTTPException(status_code=400, detail="user ID is required")
     try:
         print(user_id)
-        supabase.postgrest.auth(token)
 
         items = (
-            supabase
+            supabase_service
                 .table("products")
                 .select("*")
                 .execute()
