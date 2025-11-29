@@ -389,7 +389,7 @@ async def gather_all_items(body: dict, token: str):
 
     except Exception as e:
         print("Error creating item:", e)
-        raise HTTPException(status_code=500, detail="Failed to create item")
+        raise HTTPException(status_code=500, detail="Failed to gather all items")
 
     return items
 
@@ -411,19 +411,22 @@ async def gather_store_items(body: dict, token: str):
                 )
         print(store)
 
-        supabase.postgrest.auth(token)
-        items = (
-            supabase
-                .table("products")
-                .select("*")
-                .eq("store_id", store.data[0]['id'])
-                .execute()
-                )
-        print(items)
+        if len(store.data) == 0:
+            return {"data": []}
+        else:
+            supabase.postgrest.auth(token)
+            items = (
+                supabase
+                    .table("products")
+                    .select("*")
+                    .eq("store_id", store.data[0]['id'])
+                    .execute()
+                    )
+            print(items)
 
     except Exception as e:
         print("Error creating item:", e)
-        raise HTTPException(status_code=500, detail="Failed to create item")
+        raise HTTPException(status_code=500, detail="Failed to gather store items")
 
     return items
 
@@ -447,7 +450,7 @@ async def gather_store_info(body: dict, token: str):
 
     except Exception as e:
         print("Error creating item:", e)
-        raise HTTPException(status_code=500, detail="Failed to create item")
+        raise HTTPException(status_code=500, detail="Failed to gather store info")
 
     return store
 
@@ -470,19 +473,22 @@ async def gather_cart_items(body: dict, token: str):
                 )
         print(cart)
 
-        supabase.postgrest.auth(token)
-        items = (
-            supabase
-                .table("order_items")
-                .select("*")
-                .eq("order_id", cart.data[0]['id'])
-                .execute()
-                )
-        print(items)
+        if len(cart.data) == 0:
+            return {"data": []}
+        else:
+            supabase.postgrest.auth(token)
+            items = (
+                supabase
+                    .table("order_items")
+                    .select("*")
+                    .eq("order_id", cart.data[0]['id'])
+                    .execute()
+                    )
+            print(items)
 
     except Exception as e:
         print("Error creating item:", e)
-        raise HTTPException(status_code=500, detail="Failed to create item")
+        raise HTTPException(status_code=500, detail="Failed to gather cart items")
 
     return items
 
